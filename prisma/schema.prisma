@@ -1,0 +1,18 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  telegramId   BigInt   @unique
+  coins        Int      @default(0)
+  clickPower   Int      @default(1)
+  incomePerSec Int      @default(1)
+  lastUpdate   DateTime @default(now())
+  createdAt    DateTime @default(now())
+}
