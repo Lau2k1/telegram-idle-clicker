@@ -17,6 +17,7 @@
     "@nestjs/core": "^10.4.9",
     "@nestjs/platform-express": "^10.4.9",
     "@prisma/client": "^5.22.0",
+    "@twa-dev/sdk": "^8.0.2",
     "reflect-metadata": "^0.2.1",
     "rxjs": "^7.8.1"
   },
