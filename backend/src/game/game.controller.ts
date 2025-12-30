@@ -1,57 +1,32 @@
-import { Controller, Get, Post, Headers } from "@nestjs/common";
-import { GameService } from "./game.service";
+import { Controller, Get, Post } from '@nestjs/common';
 
-/**
- * DEV + PROD safe userId extractor
- */
-function getUserId(initData?: string): number {
-  // 🟢 DEV режим — если открыто не из Telegram
-  if (!initData || initData.trim().length === 0) {
-    return 1;
-  }
-
-  try {
-    const params = new URLSearchParams(initData);
-    const userRaw = params.get("user");
-
-    if (!userRaw) {
-      return 1;
-    }
-
-    const user = JSON.parse(userRaw);
-
-    if (!user || typeof user.id !== "number") {
-      return 1;
-    }
-
-    return user.id;
-  } catch (e) {
-    console.error("initData parse error", e);
-    return 1;
-  }
-}
-
-@Controller("game")
+@Controller()
 export class GameController {
-  constructor(private readonly game: GameService) {}
+  private coins = 0;
+  private clickPower = 1;
 
-  @Get("state")
-  getState(@Headers("x-telegram-initdata") initData?: string) {
-    const userId = getUserId(initData);
-    return this.game.getState(userId);
+  @Get('state')
+  getState() {
+    return {
+      coins: this.coins,
+      clickPower: this.clickPower,
+      incomePerSec: 0,
+    };
   }
 
-  @Post("click")
-  click(@Headers("x-telegram-initdata") initData?: string) {
-    const userId = getUserId(initData);
-    this.game.click(userId);
-    return { ok: true };
+  @Post('click')
+  click() {
+    this.coins += this.clickPower;
+    return { success: true };
   }
 
-  @Post("buy-click")
-  buy(@Headers("x-telegram-initdata") initData?: string) {
-    const userId = getUserId(initData);
-    this.game.buyClick(userId);
-    return { ok: true };
+  @Post('buy-click')
+  buyClick() {
+    if (this.coins >= 10) {
+      this.coins -= 10;
+      this.clickPower += 1;
+      return { success: true };
+    }
+    return { success: false };
   }
 }
