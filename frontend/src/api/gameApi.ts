@@ -23,3 +23,4 @@ export async function buyClickApi() {
   if (!res.ok) throw new Error('Failed to buy click');
   return res.json();
 }
+
