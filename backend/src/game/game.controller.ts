@@ -1,6 +1,6 @@
 import { Controller, Get, Post } from '@nestjs/common';
 
-@Controller()
+@Controller('game')
 export class GameController {
   private coins = 0;
   private clickPower = 1;
@@ -10,7 +10,8 @@ export class GameController {
     return {
       coins: this.coins,
       clickPower: this.clickPower,
-      incomePerSec: 0,
+      incomePerSec: 1,
+      lastUpdate: Date.now(),
     };
   }
 
