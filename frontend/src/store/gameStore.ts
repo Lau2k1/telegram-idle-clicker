@@ -5,9 +5,13 @@ interface GameState {
   coins: number;
   clickPower: number;
   incomePerSec: number;
+  userId?: number;
+  username?: string;
   load: () => Promise<void>;
   click: () => Promise<void>;
   buyClick: () => Promise<void>;
+  setUserFromTelegram: () => void;
+  
 }
 
 export const useGameStore = create<GameState>((set) => ({
@@ -30,5 +34,17 @@ export const useGameStore = create<GameState>((set) => ({
     await buyClickApi();
     const s = await fetchState();
     set(s);
+  },
+  setUserFromTelegram: () => {
+  const tg = window.Telegram?.WebApp;
+  const user = tg?.initDataUnsafe?.user;
+
+  if (user) {
+    set({
+      userId: user.id,
+      username: user.username,
+    });
   }
+}
+
 }));

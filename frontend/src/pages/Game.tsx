@@ -5,6 +5,14 @@ import ClickButton from "../components/ClickButton";
 import Stats from "../components/Stats";
 import Upgrade from "../components/Upgrade";
 
+
+const { setUserFromTelegram } = useGameStore();
+
+useEffect(() => {
+  setUserFromTelegram();
+}, []);
+
+
 export default function Game() {
   const load = useGameStore((s) => s.load);
 
