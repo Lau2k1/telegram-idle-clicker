@@ -1,28 +1,14 @@
-import { useEffect } from "react";
-import Game from "./pages/Game";
-
-declare global {
-  interface Window {
-    Telegram: any;
-  }
-}
+import { getTelegramUser } from './telegram';
 
 function App() {
-  useEffect(() => {
-    const tg = window.Telegram?.WebApp;
+  const user = getTelegramUser();
 
-    if (!tg) {
-      console.warn("Telegram WebApp not found");
-      return;
-    }
-
-    tg.ready();
-    tg.expand();
-
-    console.log("Telegram user:", tg.initDataUnsafe?.user);
-  }, []);
-
-  return <Game />;
+  return (
+    <div>
+      <h1>Idle Clicker</h1>
+      {user && <p>Привет, {user.first_name}!</p>}
+    </div>
+  );
 }
 
 export default App;
