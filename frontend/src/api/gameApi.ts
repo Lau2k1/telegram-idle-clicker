@@ -1,29 +1,25 @@
 import WebApp from "@twa-dev/sdk";
 
-const API_URL = import.meta.env.VITE_API_URL
-
-function headers() {
-  return {
-    "Content-Type": "application/json",
-    "x-telegram-initdata": WebApp.initData
-  };
-}
+const API_URL = import.meta.env.VITE_API_URL;
 
 export async function fetchState() {
-  const r = await fetch(`${API_URL}/state`, { headers: headers() });
-  return r.json();
+  const res = await fetch(`${API_URL}/state`);
+  if (!res.ok) throw new Error("Failed to fetch state");
+  return res.json();
 }
 
 export async function clickApi() {
-  await fetch(`${API_URL}/click`, {
+  const res = await fetch(`${API_URL}/click`, {
     method: "POST",
-    headers: headers()
   });
+  if (!res.ok) throw new Error("Failed to click");
 }
 
 export async function buyClickApi() {
-  await fetch(`${API_URL}/buy-click`, {
+  const res = await fetch(`${API_URL}/buy-click`, {
     method: "POST",
-    headers: headers()
   });
+  if (!res.ok) throw new Error("Failed to buy click");
 }
+
+
