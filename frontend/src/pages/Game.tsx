@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import WebApp from "@twa-dev/sdk";
 import { useGameStore } from "../store/gameStore";
 import ClickButton from "../components/ClickButton";
 import Stats from "../components/Stats";
