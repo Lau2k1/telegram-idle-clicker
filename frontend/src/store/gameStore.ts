@@ -1,6 +1,11 @@
 import { create } from "zustand";
 import { fetchState, clickApi, buyClickApi } from "../api/gameApi";
 
+
+const getTgUserId = () => {
+  return window.Telegram?.WebApp?.initDataUnsafe?.user?.id || 0;
+};
+
 interface GameState {
   coins: number;
   clickPower: number;
@@ -18,6 +23,22 @@ export const useGameStore = create<GameState>((set) => ({
   coins: 0,
   clickPower: 1,
   incomePerSec: 0,
+
+  load: async () => {
+    const userId = getTgUserId();
+    if (!userId) return; 
+    
+    try {
+      const s = await fetchState(userId); // Передаем ID
+      set({ 
+        coins: Number(s.coins), 
+        clickPower: s.clickPower, 
+        incomePerSec: s.incomePerSec 
+      });
+    } catch (e) {
+      console.error("Ошибка загрузки:", e);
+    }
+  },
 
   load: async () => {
     const s = await fetchState();
