@@ -21,13 +21,18 @@ export class GameController {
     return { success: true };
   }
 
-  @Post('buy-click')
-  buyClick() {
-    if (this.coins >= 10) {
-      this.coins -= 10;
-      this.clickPower += 1;
-      return { success: true };
-    }
-    return { success: false };
+ @Post('buy-click')
+buyClick() {
+  // Вместо ручной проверки coins >= 10, используем сервис
+  // Примечание: сейчас контроллер использует локальные переменные, 
+  // но для работы с БД или сложной логикой нужно вызвать сервис.
+  
+  const price = this.clickPower * 10; // Динамический расчет цены
+  if (this.coins >= price) {
+    this.coins -= price;
+    this.clickPower += 1;
+    return { success: true, price };
   }
+  return { success: false };
+}
 }
