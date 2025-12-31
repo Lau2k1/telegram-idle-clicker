@@ -8,9 +8,7 @@ export class GameService {
   async getState(telegramId: number) {
     try {
       const tid = BigInt(telegramId);
-      let user = await this.prisma.user.findUnique({
-        where: { telegramId: tid },
-      });
+      let user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
 
       if (!user) {
         user = await this.prisma.user.create({
@@ -31,7 +29,7 @@ export class GameService {
       let offlineBonus = 0;
       let updatedUser = user;
 
-      // Если игрока не было больше 10 секунд и у него есть пассивный доход
+      // Логика начисления: минимум 10 секунд отсутствия
       if (secondsOffline >= 10 && user.incomePerSec > 0) {
         offlineBonus = secondsOffline * user.incomePerSec;
         
@@ -39,11 +37,11 @@ export class GameService {
           where: { id: user.id },
           data: {
             coins: { increment: offlineBonus },
-            lastUpdate: now,
+            lastUpdate: now, // Обновляем время только после начисления
           },
         });
       } else {
-        // Если дохода нет, просто обновляем время последнего входа
+        // Если бонуса нет, просто фиксируем время входа
         updatedUser = await this.prisma.user.update({
           where: { id: user.id },
           data: { lastUpdate: now }
@@ -52,7 +50,7 @@ export class GameService {
 
       return {
         ...this.serializeUser(updatedUser),
-        offlineBonus // Отправляем сумму бонуса фронтенду
+        offlineBonus
       };
     } catch (error) {
       console.error("Database Error in getState:", error);
@@ -68,9 +66,7 @@ export class GameService {
 
       const updated = await this.prisma.user.update({
         where: { telegramId: tid },
-        data: {
-          coins: { increment: power },
-        },
+        data: { coins: { increment: power } },
       });
 
       return this.serializeUser(updated);
@@ -87,10 +83,9 @@ export class GameService {
       if (!user) return null;
 
       const price = user.clickPower * 10;
-
       if (Number(user.coins) >= price) {
         const updated = await this.prisma.user.update({
-          where: { tid },
+          where: { telegramId: tid },
           data: {
             coins: { decrement: price },
             clickPower: { increment: 1 },
@@ -100,7 +95,6 @@ export class GameService {
       }
       return null;
     } catch (error) {
-      console.error("Database Error in buyClick:", error);
       throw error;
     }
   }

@@ -12,7 +12,6 @@ interface GameState {
   incomePerSec: number;
   offlineBonus: number;
   showOfflineModal: boolean;
-  
   load: () => Promise<void>;
   click: () => Promise<void>;
   buyClick: () => Promise<void>;
@@ -30,6 +29,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     const userId = getTelegramUserId();
     try {
       const data = await fetchState(userId);
+      console.log("Loaded data:", data); // Отладка: проверьте это в консоли ТГ
+      
       set({
         coins: Number(data.coins),
         clickPower: data.clickPower,
@@ -38,7 +39,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         showOfflineModal: (data.offlineBonus || 0) > 0,
       });
     } catch (error) {
-      console.error("Failed to load game state:", error);
+      console.error("Failed to load:", error);
     }
   },
 
@@ -49,21 +50,15 @@ export const useGameStore = create<GameState>((set, get) => ({
     try {
       const result = await clickApi(userId);
       if (result) set({ coins: Number(result.coins) });
-    } catch (error) {
-      console.error("Failed to sync click:", error);
-    }
+    } catch (e) { console.error(e); }
   },
 
   buyClick: async () => {
     const userId = getTelegramUserId();
     try {
       const result = await buyClickApi(userId);
-      if (result) {
-        set({ coins: Number(result.coins), clickPower: result.clickPower });
-      }
-    } catch (error) {
-      console.error("Failed to buy upgrade:", error);
-    }
+      if (result) set({ coins: Number(result.coins), clickPower: result.clickPower });
+    } catch (e) { console.error(e); }
   },
 
   closeOfflineModal: () => set({ showOfflineModal: false, offlineBonus: 0 }),
