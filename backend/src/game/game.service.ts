@@ -21,10 +21,39 @@ export class GameService {
             incomePerSec: 0,
           },
         });
+        return { ...this.serializeUser(user), offlineBonus: 0 };
       }
 
-      const updatedUser = await this.applyIdle(user);
-      return this.serializeUser(updatedUser);
+      const now = new Date();
+      const lastUpdate = new Date(user.lastUpdate);
+      const secondsOffline = Math.floor((now.getTime() - lastUpdate.getTime()) / 1000);
+      
+      let offlineBonus = 0;
+      let updatedUser = user;
+
+      // Если игрока не было больше 10 секунд и у него есть пассивный доход
+      if (secondsOffline >= 10 && user.incomePerSec > 0) {
+        offlineBonus = secondsOffline * user.incomePerSec;
+        
+        updatedUser = await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            coins: { increment: offlineBonus },
+            lastUpdate: now,
+          },
+        });
+      } else {
+        // Если дохода нет, просто обновляем время последнего входа
+        updatedUser = await this.prisma.user.update({
+          where: { id: user.id },
+          data: { lastUpdate: now }
+        });
+      }
+
+      return {
+        ...this.serializeUser(updatedUser),
+        offlineBonus // Отправляем сумму бонуса фронтенду
+      };
     } catch (error) {
       console.error("Database Error in getState:", error);
       throw error;
@@ -34,7 +63,6 @@ export class GameService {
   async click(telegramId: number) {
     try {
       const tid = BigInt(telegramId);
-      // Сначала получаем текущую силу клика
       const user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
       const power = user ? user.clickPower : 1;
 
@@ -62,7 +90,7 @@ export class GameService {
 
       if (Number(user.coins) >= price) {
         const updated = await this.prisma.user.update({
-          where: { telegramId: tid },
+          where: { tid },
           data: {
             coins: { decrement: price },
             clickPower: { increment: 1 },
@@ -77,31 +105,10 @@ export class GameService {
     }
   }
 
-  private async applyIdle(user: any) {
-    const now = new Date();
-    const lastUpdate = new Date(user.lastUpdate);
-    const deltaSec = Math.floor((now.getTime() - lastUpdate.getTime()) / 1000);
-
-    if (deltaSec > 0 && user.incomePerSec > 0) {
-      const idleCoins = deltaSec * user.incomePerSec;
-      return await this.prisma.user.update({
-        where: { id: user.id },
-        data: {
-          coins: { increment: idleCoins },
-          lastUpdate: now,
-        },
-      });
-    }
-    return user;
-  }
-
-  // Метод-хелпер для очистки данных перед отправкой в JSON
   private serializeUser(user: any) {
     return {
       ...user,
-      // Превращаем BigInt в строку, это самый надежный способ для JSON
       telegramId: user.telegramId.toString(),
-      // На случай если coins в БД стали Decimal или очень большим числом
       coins: Number(user.coins),
     };
   }
