@@ -4,28 +4,23 @@ import ClickButton from "../components/ClickButton";
 import Stats from "../components/Stats";
 import Upgrade from "../components/Upgrade";
 
-
-const { setUserFromTelegram } = useGameStore();
-
-useEffect(() => {
-  setUserFromTelegram();
-}, []);
-
-
 export default function Game() {
   const load = useGameStore((s) => s.load);
 
   useEffect(() => {
-    WebApp.ready();
-    WebApp.expand();
+    // Загружаем состояние игры с бэкенда при входе [cite: 56, 59]
     load();
-  }, []);
+  }, [load]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-between p-4">
+    <div className="flex flex-col items-center justify-between p-8 h-screen">
       <Stats />
-      <ClickButton />
-      <Upgrade />
+      <div className="flex-1 flex items-center justify-center">
+        <ClickButton />
+      </div>
+      <div className="w-full max-w-md">
+        <Upgrade />
+      </div>
     </div>
   );
 }
