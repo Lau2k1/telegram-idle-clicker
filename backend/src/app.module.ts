@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
-import { GameModule } from './game/game.module'; // Добавьте импорт модуля
+import { GameController } from './game/game.controller';
+import { GameService } from './game/game.service';
+import { PrismaService } from './prisma.service';
 
 @Module({
-  imports: [GameModule], // Импортируйте GameModule здесь
-  controllers: [],       // Контроллеры теперь будут подтягиваться из GameModule
-  providers: [],
+  imports: [],
+  controllers: [GameController],
+  providers: [GameService, PrismaService], // GameService ОБЯЗАТЕЛЬНО должен быть здесь
 })
 export class AppModule {}
