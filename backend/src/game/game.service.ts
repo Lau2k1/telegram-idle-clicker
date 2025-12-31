@@ -5,6 +5,9 @@ import { PrismaService } from "../prisma.service";
 export class GameService {
   constructor(private prisma: PrismaService) {}
 
+  /**
+   * Получение или создание состояния пользователя
+   */
   async getState(telegramId: number) {
     let user = await this.prisma.user.findUnique({
       where: { telegramId: BigInt(telegramId) },
@@ -16,42 +19,57 @@ export class GameService {
           telegramId: BigInt(telegramId),
           coins: 0,
           clickPower: 1,
-          incomePerSec: 0, // Установим 0 по умолчанию
+          incomePerSec: 0,
         },
       });
     }
 
-    return this.applyIdle(user);
+    // Рассчитываем пассивный доход (idle)
+    const updatedUser = await this.applyIdle(user);
+    
+    // Возвращаем объект, заменяя BigInt на Number для корректного JSON
+    return this.mapUser(updatedUser);
   }
 
+  /**
+   * Логика клика
+   */
   async click(telegramId: number) {
     const user = await this.getState(telegramId);
     
-    // Прямое обновление в базе через метод update
-    return await this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { telegramId: BigInt(telegramId) },
       data: {
         coins: { increment: user.clickPower },
       },
     });
+
+    return this.mapUser(updated);
   }
 
+  /**
+   * Покупка улучшения клика
+   */
   async buyClick(telegramId: number) {
     const user = await this.getState(telegramId);
     const price = user.clickPower * 10;
 
     if (user.coins >= price) {
-      return await this.prisma.user.update({
+      const updated = await this.prisma.user.update({
         where: { telegramId: BigInt(telegramId) },
         data: {
           coins: { decrement: price },
           clickPower: { increment: 1 },
         },
       });
+      return this.mapUser(updated);
     }
-    return null; // Возвращаем null, если денег не хватило
+    return null;
   }
 
+  /**
+   * Приватный метод для начисления монет за время отсутствия
+   */
   private async applyIdle(user: any) {
     const now = new Date();
     const lastUpdate = new Date(user.lastUpdate);
@@ -68,5 +86,16 @@ export class GameService {
       });
     }
     return user;
+  }
+
+  /**
+   * Вспомогательный метод для конвертации BigInt -> Number.
+   * Без этого NestJS будет выдавать ошибку 500 при попытке отправить JSON.
+   */
+  private mapUser(user: any) {
+    return {
+      ...user,
+      telegramId: Number(user.telegramId), // Конвертируем BigInt в Number
+    };
   }
 }
