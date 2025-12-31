@@ -5,71 +5,78 @@ import { PrismaService } from "../prisma.service";
 export class GameService {
   constructor(private prisma: PrismaService) {}
 
-  /**
-   * Получение или создание состояния пользователя
-   */
   async getState(telegramId: number) {
-    let user = await this.prisma.user.findUnique({
-      where: { telegramId: BigInt(telegramId) },
-    });
-
-    if (!user) {
-      user = await this.prisma.user.create({
-        data: {
-          telegramId: BigInt(telegramId),
-          coins: 0,
-          clickPower: 1,
-          incomePerSec: 0,
-        },
+    try {
+      const tid = BigInt(telegramId);
+      let user = await this.prisma.user.findUnique({
+        where: { telegramId: tid },
       });
-    }
 
-    // Рассчитываем пассивный доход (idle)
-    const updatedUser = await this.applyIdle(user);
-    
-    // Возвращаем объект, заменяя BigInt на Number для корректного JSON
-    return this.mapUser(updatedUser);
+      if (!user) {
+        user = await this.prisma.user.create({
+          data: {
+            telegramId: tid,
+            coins: 0,
+            clickPower: 1,
+            incomePerSec: 0,
+          },
+        });
+      }
+
+      const updatedUser = await this.applyIdle(user);
+      return this.serializeUser(updatedUser);
+    } catch (error) {
+      console.error("Database Error in getState:", error);
+      throw error;
+    }
   }
 
-  /**
-   * Логика клика
-   */
   async click(telegramId: number) {
-    const user = await this.getState(telegramId);
-    
-    const updated = await this.prisma.user.update({
-      where: { telegramId: BigInt(telegramId) },
-      data: {
-        coins: { increment: user.clickPower },
-      },
-    });
+    try {
+      const tid = BigInt(telegramId);
+      // Сначала получаем текущую силу клика
+      const user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
+      const power = user ? user.clickPower : 1;
 
-    return this.mapUser(updated);
-  }
-
-  /**
-   * Покупка улучшения клика
-   */
-  async buyClick(telegramId: number) {
-    const user = await this.getState(telegramId);
-    const price = user.clickPower * 10;
-
-    if (user.coins >= price) {
       const updated = await this.prisma.user.update({
-        where: { telegramId: BigInt(telegramId) },
+        where: { telegramId: tid },
         data: {
-          coins: { decrement: price },
-          clickPower: { increment: 1 },
+          coins: { increment: power },
         },
       });
-      return this.mapUser(updated);
+
+      return this.serializeUser(updated);
+    } catch (error) {
+      console.error("Database Error in click:", error);
+      throw error;
     }
-    return null;
   }
 
-  /**
-   * Приватный метод для начисления монет за время отсутствия
-   */
+  async buyClick(telegramId: number) {
+    try {
+      const tid = BigInt(telegramId);
+      const user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
+      if (!user) return null;
+
+      const price = user.clickPower * 10;
+
+      if (Number(user.coins) >= price) {
+        const updated = await this.prisma.user.update({
+          where: { telegramId: tid },
+          data: {
+            coins: { decrement: price },
+            clickPower: { increment: 1 },
+          },
+        });
+        return this.serializeUser(updated);
+      }
+      return null;
+    } catch (error) {
+      console.error("Database Error in buyClick:", error);
+      throw error;
+    }
+  }
+
   private async applyIdle(user: any) {
     const now = new Date();
     const lastUpdate = new Date(user.lastUpdate);
@@ -88,14 +95,14 @@ export class GameService {
     return user;
   }
 
-  /**
-   * Вспомогательный метод для конвертации BigInt -> Number.
-   * Без этого NestJS будет выдавать ошибку 500 при попытке отправить JSON.
-   */
-  private mapUser(user: any) {
+  // Метод-хелпер для очистки данных перед отправкой в JSON
+  private serializeUser(user: any) {
     return {
       ...user,
-      telegramId: Number(user.telegramId), // Конвертируем BigInt в Number
+      // Превращаем BigInt в строку, это самый надежный способ для JSON
+      telegramId: user.telegramId.toString(),
+      // На случай если coins в БД стали Decimal или очень большим числом
+      coins: Number(user.coins),
     };
   }
 }
