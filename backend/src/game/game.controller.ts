@@ -3,44 +3,36 @@ import { GameService } from './game.service';
 
 @Controller('game')
 export class GameController {
-  // Внедряем GameService для работы с логикой и базой данных
   constructor(private readonly gameService: GameService) {}
 
-  /**
-   * Получение текущего состояния игрока.
-   * Вызывается при загрузке приложения.
-   * @param userId - Telegram ID пользователя
-   */
   @Get('state')
   async getState(@Query('userId', ParseIntPipe) userId: number) {
-    // Вызываем метод сервиса, который найдет или создаст пользователя в БД
-    // и начислит пассивный доход (idle coins)
-    return await this.gameService.getState(userId);
+    const state = await this.gameService.getState(userId);
+    // Превращаем BigInt в строку или число для JSON, так как JSON не знает BigInt
+    return {
+        ...state,
+        telegramId: state.telegramId.toString()
+    };
   }
 
-  /**
-   * Обработка клика по монете.
-   * @param userId - Telegram ID пользователя
-   */
   @Post('click')
   async click(@Query('userId', ParseIntPipe) userId: number) {
-    // Сервер сам рассчитывает прибавку на основе clickPower из БД
-    return await this.gameService.click(userId);
+    const result = await this.gameService.click(userId);
+    return { success: true, coins: result.coins };
   }
 
-  /**
-   * Покупка улучшения силы клика.
-   * @param userId - Telegram ID пользователя
-   */
   @Post('buy-click')
   async buyClick(@Query('userId', ParseIntPipe) userId: number) {
-    // Сервер проверяет баланс в БД и списывает актуальную цену (clickPower * 10)
     const result = await this.gameService.buyClick(userId);
     
-    // Возвращаем результат покупки
+    if (!result) {
+        return { success: false, message: 'Not enough coins' };
+    }
+
     return { 
-      success: !!result, 
-      user: result 
+      success: true, 
+      coins: result.coins,
+      clickPower: result.clickPower 
     };
   }
 }

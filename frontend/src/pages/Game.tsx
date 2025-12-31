@@ -8,7 +8,7 @@ export default function Game() {
   const load = useGameStore((s) => s.load);
 
   useEffect(() => {
-    // Загружаем состояние игры с бэкенда при входе [cite: 56, 59]
+    // Загружаем состояние игры с бэкенда при входе
     load();
   }, [load]);
 
