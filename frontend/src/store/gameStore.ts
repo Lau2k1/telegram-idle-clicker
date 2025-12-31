@@ -29,37 +29,50 @@ export const useGameStore = create<GameState>((set, get) => ({
     const userId = getTelegramUserId();
     try {
       const data = await fetchState(userId);
-      console.log("Loaded data:", data); // Отладка: проверьте это в консоли ТГ
+      
+      // Используем временную переменную для расчета бонуса
+      const bonus = data.offlineBonus || 0;
       
       set({
         coins: Number(data.coins),
         clickPower: data.clickPower,
         incomePerSec: data.incomePerSec,
-        offlineBonus: data.offlineBonus || 0,
-        showOfflineModal: (data.offlineBonus || 0) > 0,
+        offlineBonus: bonus,
+        // Окно откроется только если бонус > 0 и оно еще не было открыто
+        showOfflineModal: bonus > 0, 
       });
     } catch (error) {
-      console.error("Failed to load:", error);
+      console.error("Failed to load game state:", error);
     }
   },
 
   click: async () => {
     const userId = getTelegramUserId();
     const { clickPower, coins } = get();
+    // Оптимистичное обновление
     set({ coins: coins + clickPower });
     try {
       const result = await clickApi(userId);
       if (result) set({ coins: Number(result.coins) });
-    } catch (e) { console.error(e); }
+    } catch (error) {
+      console.error("Failed to sync click:", error);
+    }
   },
 
   buyClick: async () => {
     const userId = getTelegramUserId();
     try {
       const result = await buyClickApi(userId);
-      if (result) set({ coins: Number(result.coins), clickPower: result.clickPower });
-    } catch (e) { console.error(e); }
+      if (result) {
+        set({ coins: Number(result.coins), clickPower: result.clickPower });
+      }
+    } catch (error) {
+      console.error("Failed to buy upgrade:", error);
+    }
   },
 
-  closeOfflineModal: () => set({ showOfflineModal: false, offlineBonus: 0 }),
+  // Эта функция теперь гарантированно вызывается ТОЛЬКО кнопкой
+  closeOfflineModal: () => {
+    set({ showOfflineModal: false, offlineBonus: 0 });
+  },
 }));

@@ -15,14 +15,14 @@ const OfflineModal: React.FC<OfflineModalProps> = ({ amount, onClose }) => {
         <div className="modal-icon">⛏️</div>
         <h2 className="modal-title">С возвращением!</h2>
         <p className="modal-text">
-          Твои шахтеры не бездельничали и добыли для тебя:
+          Пока тебя не было, твои шахты работали на полную мощность:
         </p>
         <div className="modal-amount">
           <span>+{amount}</span>
-          <span style={{ fontSize: '1.5rem' }}>💰</span>
+          <span style={{ fontSize: '1.8rem' }}>💰</span>
         </div>
         <button className="modal-button" onClick={onClose}>
-          Забрать монеты
+          ЗАБРАТЬ МОНЕТЫ
         </button>
       </div>
     </div>
