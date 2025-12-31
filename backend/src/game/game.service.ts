@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { PrismaService } from "src/prisma.service";
 
 interface GameState {
   coins: number;
@@ -9,15 +10,16 @@ interface GameState {
 
 @Injectable()
 export class GameService {
-  private users = new Map<number, GameState>();
+  constructor(private prisma: PrismaService) {} // Внедряем базу
 
-  getState(userId: number): GameState {
-    if (!this.users.has(userId)) {
-      this.users.set(userId, {
-        coins: 0,
-        clickPower: 1,
-        incomePerSec: 1,
-        lastUpdate: Date.now()
+  async getState(telegramId: number) {
+    let user = await this.prisma.user.findUnique({
+      where: { telegramId: BigInt(telegramId) }
+    });
+
+    if (!user) {
+      user = await this.prisma.user.create({
+        data: { telegramId: BigInt(telegramId) }
       });
     }
 
