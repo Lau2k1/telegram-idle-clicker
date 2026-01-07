@@ -5,16 +5,27 @@ import { PrismaService } from "../prisma.service";
 export class GameService {
   constructor(private prisma: PrismaService) {}
 
-  async getState(telegramId: number) {
+  async getState(telegramId: number, firstName?: string) {
     try {
       const tid = BigInt(telegramId);
       let user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
 
       if (!user) {
         user = await this.prisma.user.create({
-          data: { telegramId: tid, coins: 0, clickPower: 1, incomePerSec: 0 },
+          data: {
+            telegramId: tid,
+            firstName: firstName || "Аноним", // Сохраняем имя
+            coins: 0,
+            clickPower: 1,
+            incomePerSec: 0,
+          },
         });
-        return { ...this.serializeUser(user), offlineBonus: 0 };
+      } else if (firstName && user.firstName !== firstName) {
+        // Обновляем имя, если оно изменилось в Telegram
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: { firstName }
+        });
       }
 
       const now = new Date();
@@ -39,12 +50,11 @@ export class GameService {
 
       return { ...this.serializeUser(updatedUser), offlineBonus };
     } catch (error) {
-      console.error("Database Error in getState:", error);
+      console.error("Database Error:", error);
       throw error;
     }
   }
 
-  // НОВЫЙ МЕТОД: Лидерборд
   async getLeaderboard() {
     const topUsers = await this.prisma.user.findMany({
       orderBy: { coins: 'desc' },
@@ -54,45 +64,22 @@ export class GameService {
   }
 
   async click(telegramId: number) {
-    try {
-      const tid = BigInt(telegramId);
-      const user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
-      const power = user ? user.clickPower : 1;
+    const tid = BigInt(telegramId);
+    const user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
+    if (!user) return null;
 
-      const updated = await this.prisma.user.update({
-        where: { telegramId: tid },
-        data: { coins: { increment: power } },
-      });
-
-      return this.serializeUser(updated);
-    } catch (error) {
-      console.error("Database Error in click:", error);
-      throw error;
-    }
-  }
-
-  async buyClick(telegramId: number) {
-    try {
-      const tid = BigInt(telegramId);
-      const user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
-      if (!user) return null;
-
-      const price = user.clickPower * 10;
-      if (Number(user.coins) >= price) {
-        const updated = await this.prisma.user.update({
-          where: { telegramId: tid },
-          data: { coins: { decrement: price }, clickPower: { increment: 1 } },
-        });
-        return this.serializeUser(updated);
-      }
-      return null;
-    } catch (error) { throw error; }
+    const updated = await this.prisma.user.update({
+      where: { telegramId: tid },
+      data: { coins: { increment: user.clickPower } },
+    });
+    return this.serializeUser(updated);
   }
 
   private serializeUser(user: any) {
     return {
       ...user,
       telegramId: user.telegramId.toString(),
+      firstName: user.firstName || "Игрок",
       coins: Number(user.coins),
     };
   }

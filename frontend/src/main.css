@@ -1,0 +1,21 @@
+:root {
+  --bg-color: #0a0c1a;
+  --text-color: #ffffff;
+  --accent-color: #fbbf24;
+  --secondary-bg: #1a1c2c;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-color) !important;
+  color: var(--text-color) !important;
+  font-family: 'Inter', sans-serif;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Фикс для светлой темы TG */
+html.light body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}

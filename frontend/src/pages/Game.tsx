@@ -9,58 +9,45 @@ interface ClickEffect {
 }
 
 const Game: React.FC = () => {
-  const { coins, click, clickPower, loadLeaderboard, leaderboard } = useGameStore();
+  const { coins, click, clickPower } = useGameStore();
   const [clicks, setClicks] = useState<ClickEffect[]>([]);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const { clientX, clientY } = e;
-    click(); // Вызов основной логики из стора (с вибрацией)
+    click();
 
-    // Создаем эффект анимации
     const id = Date.now();
     setClicks((prev) => [...prev, { id, x: clientX, y: clientY }]);
-
-    // Удаляем эффект через 1 секунду
     setTimeout(() => {
       setClicks((prev) => prev.filter((c) => c.id !== id));
-    }, 1000);
+    }, 800);
   };
 
   return (
-    <div className="game-container">
-      <div className="stats-header">
-        <div className="stat-box">
+    <div className="game-page">
+      <div className="balance-display">
+        <span className="balance-label">БАЛАНС</span>
+        <div className="balance-value">
           <span className="coin-icon">💰</span>
-          <span className="coin-count">{Math.floor(coins)}</span>
+          {Math.floor(coins).toLocaleString()}
         </div>
       </div>
 
-      <div className="click-area" onPointerDown={handlePointerDown}>
-        <div className="main-coin">⛏️</div>
+      <div className="mining-section" onPointerDown={handlePointerDown}>
+        <div className="coin-wrapper">
+          <div className="main-miner">⛏️</div>
+        </div>
+        
         {clicks.map((c) => (
-          <div key={c.id} className="click-float" style={{ left: c.x, top: c.y }}>
+          <div key={c.id} className="floating-text" style={{ left: c.x, top: c.y }}>
             +{clickPower}
           </div>
         ))}
       </div>
 
-      <button onClick={loadLeaderboard} className="leaderboard-btn">
-        🏆 Показать лидеров
-      </button>
-
-      {leaderboard.length > 0 && (
-        <div className="leaderboard-overlay" onClick={() => useGameStore.setState({ leaderboard: [] })}>
-          <div className="leaderboard-card" onClick={e => e.stopPropagation()}>
-            <h3>Топ Шахтеров</h3>
-            {leaderboard.map((u, i) => (
-              <div key={u.telegramId} className="leader-row">
-                <span>{i + 1}. {u.telegramId.slice(0, 5)}...</span>
-                <span className="leader-coins">{u.coins} 💰</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <div className="power-info">
+        Сила клика: <span>{clickPower}</span>
+      </div>
     </div>
   );
 };
