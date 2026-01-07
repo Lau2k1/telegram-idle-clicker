@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import "./styles.css";
+import "./main.css";
 import App from "./App";
 
 // Удаляем лишние вызовы здесь, так как они теперь внутри App.tsx
