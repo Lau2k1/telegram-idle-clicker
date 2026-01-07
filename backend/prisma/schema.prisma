@@ -1,8 +1,5 @@
-// This is your Prisma schema file,
-// learn more it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-  provider = "prisma-client-node"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -13,7 +10,7 @@ datasource db {
 model User {
   id           Int      @id @default(autoincrement())
   telegramId   BigInt   @unique
-  firstName    String?  // ДОБАВЬТЕ ЭТУ СТРОКУ
+  firstName    String?  
   coins        Float    @default(0)
   clickPower   Int      @default(1)
   incomePerSec Int      @default(0)

@@ -6,7 +6,6 @@ const getTelegramUserId = (): number => {
   return tg?.initDataUnsafe?.user?.id || 12345;
 };
 
-// Функция для вибрации
 const triggerHaptic = () => {
   const tg = (window as any).Telegram?.WebApp;
   if (tg?.HapticFeedback) {
@@ -41,10 +40,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     const tg = (window as any).Telegram?.WebApp;
     const userId = getTelegramUserId();
     const firstName = tg?.initDataUnsafe?.user?.first_name || "Шахтер";
+
     try {
-      
       const data = await fetchState(userId, firstName);
       const bonus = data.offlineBonus || 0;
+      
       set({
         coins: Number(data.coins),
         clickPower: data.clickPower,
@@ -52,11 +52,13 @@ export const useGameStore = create<GameState>((set, get) => ({
         offlineBonus: get().offlineBonus > 0 ? get().offlineBonus : bonus,
         showOfflineModal: get().showOfflineModal || bonus > 0,
       });
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error("Ошибка загрузки состояния:", e);
+    }
   },
 
   click: async () => {
-    triggerHaptic(); // ВИБРАЦИЯ
+    triggerHaptic();
     const userId = getTelegramUserId();
     const { clickPower, coins } = get();
     set({ coins: coins + clickPower });
@@ -67,11 +69,13 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   buyClick: async () => {
-    triggerHaptic(); // ВИБРАЦИЯ
+    triggerHaptic();
     const userId = getTelegramUserId();
     try {
       const result = await buyClickApi(userId);
-      if (result) set({ coins: Number(result.coins), clickPower: result.clickPower });
+      if (result) {
+        set({ coins: Number(result.coins), clickPower: result.clickPower });
+      }
     } catch (e) { console.error(e); }
   },
 
