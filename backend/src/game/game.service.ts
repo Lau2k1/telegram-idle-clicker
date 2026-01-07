@@ -75,7 +75,7 @@ export class GameService {
       price = user.clickPower * 50;
       updateData = { clickPower: { increment: 1 } };
     } else if (type === 'income') {
-      price = (user.incomePerSec / 5 + 1) * 100;
+      price = (user.incomePerSec / 5 + 1) * 500;
       updateData = { incomePerSec: { increment: 5 } };
     } else if (type === 'limit') {
       price = (user.maxOfflineTime / 3600) * 500;

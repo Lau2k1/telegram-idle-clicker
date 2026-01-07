@@ -6,7 +6,7 @@ const Shop: React.FC = () => {
 
   const upgrades = [
     { id: 'click', name: 'Мощный Клик', desc: '+1 за клик', price: clickPower * 50, icon: '⚡' },
-    { id: 'income', name: 'Бригада', desc: '+5/сек доход', price: (incomePerSec / 5 + 1) * 100, icon: '👷' },
+    { id: 'income', name: 'Бригада', desc: '+5/сек офлайн дохода', price: (incomePerSec / 5 + 1) * 100, icon: '👷' },
     { id: 'limit', name: 'Хранилище', desc: '+1 час оффлайна', price: (maxOfflineTime / 3600) * 500, icon: '📦' },
   ];
 
