@@ -14,14 +14,13 @@ export class GameService {
         user = await this.prisma.user.create({
           data: {
             telegramId: tid,
-            firstName: firstName || "Аноним", // Сохраняем имя
+            firstName: firstName || "Аноним",
             coins: 0,
             clickPower: 1,
             incomePerSec: 0,
           },
         });
       } else if (firstName && user.firstName !== firstName) {
-        // Обновляем имя, если оно изменилось в Telegram
         user = await this.prisma.user.update({
           where: { id: user.id },
           data: { firstName }
@@ -50,7 +49,7 @@ export class GameService {
 
       return { ...this.serializeUser(updatedUser), offlineBonus };
     } catch (error) {
-      console.error("Database Error:", error);
+      console.error("Database Error in getState:", error);
       throw error;
     }
   }
@@ -73,6 +72,25 @@ export class GameService {
       data: { coins: { increment: user.clickPower } },
     });
     return this.serializeUser(updated);
+  }
+
+  async buyClick(telegramId: number) {
+    const tid = BigInt(telegramId);
+    const user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
+    if (!user) return null;
+
+    const price = user.clickPower * 10;
+    if (user.coins >= price) {
+      const updated = await this.prisma.user.update({
+        where: { telegramId: tid },
+        data: {
+          coins: { decrement: price },
+          clickPower: { increment: 1 }
+        },
+      });
+      return this.serializeUser(updated);
+    }
+    return null;
   }
 
   private serializeUser(user: any) {

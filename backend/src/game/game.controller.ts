@@ -6,8 +6,11 @@ export class GameController {
   constructor(private readonly gameService: GameService) {}
 
   @Get('state')
-  getState(@Query('userId') userId: string) {
-    return this.gameService.getState(Number(userId));
+  getState(
+    @Query('userId') userId: string,
+    @Query('name') name?: string
+  ) {
+    return this.gameService.getState(Number(userId), name);
   }
 
   @Post('click')
@@ -20,7 +23,6 @@ export class GameController {
     return this.gameService.buyClick(Number(userId));
   }
 
-  // НОВЫЙ ЭНДПОИНТ
   @Get('leaderboard')
   getLeaderboard() {
     return this.gameService.getLeaderboard();

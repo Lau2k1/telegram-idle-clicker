@@ -38,9 +38,12 @@ export const useGameStore = create<GameState>((set, get) => ({
   leaderboard: [],
 
   load: async () => {
+    const tg = (window as any).Telegram?.WebApp;
     const userId = getTelegramUserId();
+    const firstName = tg?.initDataUnsafe?.user?.first_name || "Шахтер";
     try {
-      const data = await fetchState(userId);
+      
+      const data = await fetchState(userId, firstName);
       const bonus = data.offlineBonus || 0;
       set({
         coins: Number(data.coins),
