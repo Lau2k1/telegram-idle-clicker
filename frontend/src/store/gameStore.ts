@@ -30,16 +30,20 @@ export const useGameStore = create<GameState>((set, get) => ({
     try {
       const data = await fetchState(userId);
       
-      // Используем временную переменную для расчета бонуса
-      const bonus = data.offlineBonus || 0;
-      
+      const currentBonus = get().offlineBonus;
+      const currentModalStatus = get().showOfflineModal;
+
+      // Если модалка уже открыта или бонус уже начислен в текущей сессии, 
+      // мы не даем серверу сбросить эти значения в 0 при повторном рендере
+      const newBonus = data.offlineBonus || 0;
+
       set({
         coins: Number(data.coins),
         clickPower: data.clickPower,
         incomePerSec: data.incomePerSec,
-        offlineBonus: bonus,
-        // Окно откроется только если бонус > 0 и оно еще не было открыто
-        showOfflineModal: bonus > 0, 
+        // Оставляем старый бонус, если новый пришел пустой (защита от перезатирания)
+        offlineBonus: currentBonus > 0 ? currentBonus : newBonus,
+        showOfflineModal: currentModalStatus || newBonus > 0,
       });
     } catch (error) {
       console.error("Failed to load game state:", error);
@@ -49,7 +53,6 @@ export const useGameStore = create<GameState>((set, get) => ({
   click: async () => {
     const userId = getTelegramUserId();
     const { clickPower, coins } = get();
-    // Оптимистичное обновление
     set({ coins: coins + clickPower });
     try {
       const result = await clickApi(userId);
@@ -71,8 +74,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
   },
 
-  // Эта функция теперь гарантированно вызывается ТОЛЬКО кнопкой
   closeOfflineModal: () => {
+    console.log("Modal closed by user");
     set({ showOfflineModal: false, offlineBonus: 0 });
   },
 }));
