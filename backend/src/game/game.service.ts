@@ -12,12 +12,7 @@ export class GameService {
 
       if (!user) {
         user = await this.prisma.user.create({
-          data: {
-            telegramId: tid,
-            coins: 0,
-            clickPower: 1,
-            incomePerSec: 0,
-          },
+          data: { telegramId: tid, coins: 0, clickPower: 1, incomePerSec: 0 },
         });
         return { ...this.serializeUser(user), offlineBonus: 0 };
       }
@@ -29,33 +24,33 @@ export class GameService {
       let offlineBonus = 0;
       let updatedUser = user;
 
-      // Логика начисления: минимум 10 секунд отсутствия
       if (secondsOffline >= 10 && user.incomePerSec > 0) {
         offlineBonus = secondsOffline * user.incomePerSec;
-        
         updatedUser = await this.prisma.user.update({
           where: { id: user.id },
-          data: {
-            coins: { increment: offlineBonus },
-            lastUpdate: now, // Обновляем время только после начисления
-          },
+          data: { coins: { increment: offlineBonus }, lastUpdate: now },
         });
       } else {
-        // Если бонуса нет, просто фиксируем время входа
         updatedUser = await this.prisma.user.update({
           where: { id: user.id },
           data: { lastUpdate: now }
         });
       }
 
-      return {
-        ...this.serializeUser(updatedUser),
-        offlineBonus
-      };
+      return { ...this.serializeUser(updatedUser), offlineBonus };
     } catch (error) {
       console.error("Database Error in getState:", error);
       throw error;
     }
+  }
+
+  // НОВЫЙ МЕТОД: Лидерборд
+  async getLeaderboard() {
+    const topUsers = await this.prisma.user.findMany({
+      orderBy: { coins: 'desc' },
+      take: 10,
+    });
+    return topUsers.map(user => this.serializeUser(user));
   }
 
   async click(telegramId: number) {
@@ -86,17 +81,12 @@ export class GameService {
       if (Number(user.coins) >= price) {
         const updated = await this.prisma.user.update({
           where: { telegramId: tid },
-          data: {
-            coins: { decrement: price },
-            clickPower: { increment: 1 },
-          },
+          data: { coins: { decrement: price }, clickPower: { increment: 1 } },
         });
         return this.serializeUser(updated);
       }
       return null;
-    } catch (error) {
-      throw error;
-    }
+    } catch (error) { throw error; }
   }
 
   private serializeUser(user: any) {

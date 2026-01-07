@@ -1,0 +1,58 @@
+.game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100vh;
+  padding: 20px;
+}
+
+.main-coin {
+  font-size: 120px;
+  user-select: none;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.main-coin:active {
+  transform: scale(0.9);
+}
+
+.click-float {
+  position: fixed;
+  color: #fbbf24;
+  font-weight: 900;
+  font-size: 24px;
+  pointer-events: none;
+  animation: floatUp 0.8s ease-out forwards;
+  z-index: 100;
+}
+
+@keyframes floatUp {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-100px); }
+}
+
+.leaderboard-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
+}
+
+.leaderboard-card {
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 20px;
+  width: 80%;
+  max-width: 300px;
+}
+
+.leader-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #334155;
+}
