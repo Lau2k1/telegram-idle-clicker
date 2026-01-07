@@ -19,40 +19,42 @@
   font-size: 18px;
   font-weight: 900;
   color: #fbbf24;
-  letter-spacing: 2px;
+  letter-spacing: 1px;
 }
 
+/* Кнопка Гамбургер */
 .menu-toggle {
   background: none;
   border: none;
-  padding: 10px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
   cursor: pointer;
 }
 
-.hamburger {
+.menu-toggle span {
+  display: block;
   width: 24px;
   height: 2px;
-  background: white;
+  background: #fbbf24;
+  border-radius: 2px;
+}
+
+/* Основной контент */
+.main-content {
+  flex: 1;
   position: relative;
+  overflow-y: auto;
 }
 
-.hamburger::before, .hamburger::after {
-  content: '';
-  position: absolute;
-  width: 24px;
-  height: 2px;
-  background: white;
-  left: 0;
-}
-
-.hamburger::before { top: -8px; }
-.hamburger::after { top: 8px; }
-
-/* Side Menu */
+/* Выдвижное Меню */
 .side-menu-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
   opacity: 0;
   visibility: hidden;
   transition: 0.3s;
@@ -71,40 +73,33 @@
   bottom: 0;
   width: 280px;
   background: #1a1c2c;
-  transition: 0.3s;
-  padding: 20px;
+  transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .side-menu-overlay.open .side-menu {
   left: 0;
 }
 
-.menu-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 40px;
-}
-
-.menu-links {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.menu-links button {
+.menu-item {
   background: #24273d;
-  border: none;
+  border: 1px solid #334155;
   color: white;
   padding: 15px;
+  border-radius: 16px;
   text-align: left;
-  border-radius: 12px;
   font-size: 16px;
+  font-weight: 600;
   display: flex;
-  gap: 10px;
+  align-items: center;
+  gap: 12px;
 }
 
-.menu-links button.active {
+.menu-item.active {
   background: #fbbf24;
   color: black;
+  border-color: #fbbf24;
 }

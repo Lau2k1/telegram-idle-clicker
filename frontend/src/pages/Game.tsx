@@ -25,28 +25,26 @@ const Game: React.FC = () => {
 
   return (
     <div className="game-page">
-      <div className="balance-display">
-        <span className="balance-label">БАЛАНС</span>
-        <div className="balance-value">
-          <span className="coin-icon">💰</span>
+      <div className="balance-card">
+        <div className="balance-label">ВАШИ МОНЕТЫ</div>
+        <div className="balance-amount">
+          <span>💰</span>
           {Math.floor(coins).toLocaleString()}
         </div>
       </div>
 
-      <div className="mining-section" onPointerDown={handlePointerDown}>
-        <div className="coin-wrapper">
-          <div className="main-miner">⛏️</div>
-        </div>
+      <div className="click-zone" onPointerDown={handlePointerDown}>
+        <div className="miner-button">⛏️</div>
         
         {clicks.map((c) => (
-          <div key={c.id} className="floating-text" style={{ left: c.x, top: c.y }}>
+          <div key={c.id} className="floating-number" style={{ left: c.x - 20, top: c.y - 20 }}>
             +{clickPower}
           </div>
         ))}
       </div>
 
-      <div className="power-info">
-        Сила клика: <span>{clickPower}</span>
+      <div className="bg-[#1a1c2c] px-6 py-3 rounded-2xl border border-slate-700 text-slate-400">
+        Сила клика: <span className="text-yellow-500 font-bold">{clickPower}</span>
       </div>
     </div>
   );

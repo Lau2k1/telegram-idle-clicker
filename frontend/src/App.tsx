@@ -19,30 +19,31 @@ function App() {
       if (tg) {
         tg.ready();
         tg.expand();
+        tg.headerColor = '#1a1c2c';
         tg.backgroundColor = '#0a0c1a';
-        tg.headerColor = '#0a0c1a';
       }
       load().finally(() => setIsReady(true));
       isInitialMount.current = false;
     }
   }, [load]);
 
-  const navigateTo = (page: string) => {
+  const navigate = (page: string) => {
     setActivePage(page);
     setIsMenuOpen(false);
   };
 
-  if (!isReady) return <div className="loading-screen">Загрузка...</div>;
+  if (!isReady) return <div className="flex h-screen items-center justify-center bg-[#0a0c1a] text-yellow-500 font-bold">ЗАГРУЗКА...</div>;
 
   return (
     <div className="app-container">
-      {/* Шапка с кнопкой меню */}
       <header className="app-header">
         <button className="menu-toggle" onClick={() => setIsMenuOpen(true)}>
-          <div className="hamburger"></div>
+          <span></span>
+          <span></span>
+          <span></span>
         </button>
-        <h1 className="logo">MINER GAME</h1>
-        <div style={{width: '40px'}}></div> {/* Для баланса */}
+        <h1 className="logo">GOLD MINER</h1>
+        <div className="w-8"></div> {/* Заглушка для центровки */}
       </header>
 
       <main className="main-content">
@@ -51,24 +52,19 @@ function App() {
         {activePage === 'stats' && <Stats />}
       </main>
 
-      {/* Выдвижное Меню */}
+      {/* Меню */}
       <div className={`side-menu-overlay ${isMenuOpen ? 'open' : ''}`} onClick={() => setIsMenuOpen(false)}>
         <div className="side-menu" onClick={e => e.stopPropagation()}>
-          <div className="menu-header">
-            <h3>МЕНЮ</h3>
-            <button className="close-menu" onClick={() => setIsMenuOpen(false)}>×</button>
-          </div>
-          <nav className="menu-links">
-            <button onClick={() => navigateTo('game')} className={activePage === 'game' ? 'active' : ''}>
-              <span>⛏️</span> Главная
-            </button>
-            <button onClick={() => navigateTo('leaders')} className={activePage === 'leaders' ? 'active' : ''}>
-              <span>🏆</span> Лидеры
-            </button>
-            <button onClick={() => navigateTo('stats')} className={activePage === 'stats' ? 'active' : ''}>
-              <span>📊</span> Статистика
-            </button>
-          </nav>
+          <h2 className="text-yellow-500 font-black text-xl mb-4">МЕНЮ</h2>
+          <button onClick={() => navigate('game')} className={`menu-item ${activePage === 'game' ? 'active' : ''}`}>
+            ⛏️ Майнинг
+          </button>
+          <button onClick={() => navigate('leaders')} className={`menu-item ${activePage === 'leaders' ? 'active' : ''}`}>
+            🏆 Лидерборд
+          </button>
+          <button onClick={() => navigate('stats')} className={`menu-item ${activePage === 'stats' ? 'active' : ''}`}>
+            📊 Статистика
+          </button>
         </div>
       </div>
       
