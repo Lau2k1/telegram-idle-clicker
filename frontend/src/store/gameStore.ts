@@ -37,12 +37,12 @@ export const useGameStore = create<GameState>((set, get) => ({
       const res = await fetch(`${import.meta.env.VITE_API_URL}/game/state?userId=${userId}&name=${name}`);
       const data = await res.json();
       set({
-        coins: data.coins,
-        clickPower: data.clickPower,
-        incomePerSec: data.incomePerSec,
-        maxOfflineTime: data.maxOfflineTime,
-        offlineBonus: data.offlineBonus,
-        showOfflineModal: data.offlineBonus > 0
+        coins: Number(data.coins),
+        clickPower: Number(data.clickPower),
+        incomePerSec: Number(data.incomePerSec),
+        maxOfflineTime: Number(data.maxOfflineTime),
+        offlineBonus: Number(data.offlineBonus),
+        showOfflineModal: Number(data.offlineBonus) > 0
       });
     } catch (e) { console.error(e); }
   },
@@ -58,7 +58,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/game/click?userId=${userId}`, { method: 'POST' });
       const data = await res.json();
-      if (data) set({ coins: data.coins });
+      if (data) set({ coins: Number(data.coins) });
     } catch (e) { console.error(e); }
   },
 
@@ -71,10 +71,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (data) {
         if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
         set({
-          coins: data.coins,
-          clickPower: data.clickPower,
-          incomePerSec: data.incomePerSec,
-          maxOfflineTime: data.maxOfflineTime
+          coins: Number(data.coins),
+          clickPower: Number(data.clickPower),
+          incomePerSec: Number(data.incomePerSec),
+          maxOfflineTime: Number(data.maxOfflineTime)
         });
       }
     } catch (e) { console.error(e); }

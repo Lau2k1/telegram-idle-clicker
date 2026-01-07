@@ -9,7 +9,7 @@ interface ClickEffect {
 }
 
 const Game: React.FC = () => {
-  const { coins, click, clickPower } = useGameStore();
+  const { coins, click, clickPower, incomePerSec } = useGameStore();
   const [clicks, setClicks] = useState<ClickEffect[]>([]);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -26,10 +26,15 @@ const Game: React.FC = () => {
   return (
     <div className="game-page">
       <div className="balance-card">
-        <div className="balance-label">ВАШИ МОНЕТЫ</div>
+        <div className="balance-label">БАЛАНС</div>
         <div className="balance-amount">
           <span>💰</span>
           {Math.floor(coins).toLocaleString()}
+        </div>
+        {/* НОВОЕ ПОЛЕ: Доход в секунду */}
+        <div className="text-green-400 text-sm font-bold mt-1 flex items-center justify-center gap-1">
+          <span className="animate-pulse">●</span>
+          Доход: +{incomePerSec}/сек
         </div>
       </div>
 
@@ -43,8 +48,10 @@ const Game: React.FC = () => {
         ))}
       </div>
 
-      <div className="bg-[#1a1c2c] px-6 py-3 rounded-2xl border border-slate-700 text-slate-400">
-        Сила клика: <span className="text-yellow-500 font-bold">{clickPower}</span>
+      <div className="bg-[#1a1c2c] px-6 py-3 rounded-2xl border border-slate-700 text-slate-400 flex gap-4">
+        <div>Клик: <span className="text-yellow-500 font-bold">{clickPower}</span></div>
+        <div className="w-px h-4 bg-slate-700 self-center"></div>
+        <div>Оффлайн: <span className="text-blue-400 font-bold">{useGameStore.getState().maxOfflineTime / 3600}ч</span></div>
       </div>
     </div>
   );

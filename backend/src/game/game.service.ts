@@ -32,7 +32,6 @@ export class GameService {
       const lastUpdate = new Date(user.lastUpdate);
       let secondsOffline = Math.floor((now.getTime() - lastUpdate.getTime()) / 1000);
       
-      // Ограничение по времени оффлайна
       if (secondsOffline > user.maxOfflineTime) {
         secondsOffline = user.maxOfflineTime;
       }
@@ -44,10 +43,7 @@ export class GameService {
         offlineBonus = secondsOffline * user.incomePerSec;
         updatedUser = await this.prisma.user.update({
           where: { telegramId: tid },
-          data: { 
-            coins: { increment: offlineBonus }, 
-            lastUpdate: now 
-          },
+          data: { coins: { increment: offlineBonus }, lastUpdate: now },
         });
       } else {
         updatedUser = await this.prisma.user.update({
@@ -71,14 +67,20 @@ export class GameService {
     let price = 0;
     let updateData = {};
 
+    // ФОРМУЛЫ ПРОГРЕССИИ ЦЕН
     if (type === 'click') {
-      price = user.clickPower * 50;
+      // Цена: 50 * (1.5 ^ (уровень - 1))
+      price = Math.floor(50 * Math.pow(1.5, user.clickPower - 1));
       updateData = { clickPower: { increment: 1 } };
     } else if (type === 'income') {
-      price = (user.incomePerSec / 5 + 1) * 500;
+      // Уровень дохода считаем как доход / 5. Цена: 100 * (1.3 ^ уровень)
+      const currentLevel = Math.floor(user.incomePerSec / 5);
+      price = Math.floor(100 * Math.pow(1.3, currentLevel));
       updateData = { incomePerSec: { increment: 5 } };
     } else if (type === 'limit') {
-      price = (user.maxOfflineTime / 3600) * 500;
+      // Уровень лимита: часы оффлайна. Цена: 500 * (2 ^ (уровень - 1))
+      const currentLevel = user.maxOfflineTime / 3600;
+      price = Math.floor(500 * Math.pow(2, currentLevel - 1));
       updateData = { maxOfflineTime: { increment: 3600 } };
     }
 
