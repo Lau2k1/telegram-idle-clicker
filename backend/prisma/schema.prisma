@@ -8,11 +8,13 @@ datasource db {
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
-  telegramId   BigInt   @unique
-  firstName    String?  
-  coins        Float    @default(0)
-  clickPower   Int      @default(1)
-  incomePerSec Int      @default(0)
-  lastUpdate   DateTime @default(now())
+  id              Int      @id @default(autoincrement())
+  telegramId      BigInt   @unique
+  firstName       String?  
+  coins           Float    @default(0)
+  clickPower      Int      @default(1)
+  incomePerSec    Int      @default(0)
+  // Максимальное время оффлайн-дохода в секундах (по умолчанию 3600 = 1 час)
+  maxOfflineTime  Int      @default(3600) 
+  lastUpdate      DateTime @default(now())
 }

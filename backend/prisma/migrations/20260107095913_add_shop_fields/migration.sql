@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "maxOfflineTime" INTEGER NOT NULL DEFAULT 3600;

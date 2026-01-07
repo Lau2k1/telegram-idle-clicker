@@ -6,10 +6,7 @@ export class GameController {
   constructor(private readonly gameService: GameService) {}
 
   @Get('state')
-  getState(
-    @Query('userId') userId: string,
-    @Query('name') name?: string
-  ) {
+  getState(@Query('userId') userId: string, @Query('name') name?: string) {
     return this.gameService.getState(Number(userId), name);
   }
 
@@ -18,9 +15,9 @@ export class GameController {
     return this.gameService.click(Number(userId));
   }
 
-  @Post('buy-click')
-  buyClick(@Query('userId') userId: string) {
-    return this.gameService.buyClick(Number(userId));
+  @Post('upgrade')
+  upgrade(@Query('userId') userId: string, @Query('type') type: 'click' | 'income' | 'limit') {
+    return this.gameService.upgrade(Number(userId), type);
   }
 
   @Get('leaderboard')
