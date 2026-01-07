@@ -1,51 +1,68 @@
 import { useEffect, useState, useRef } from 'react';
 import { useGameStore } from './store/gameStore';
 import Game from './pages/Game';
+import Leaderboard from './pages/Leaderboard';
+import Stats from './pages/Stats';
 import OfflineModal from './components/OfflineModal';
+import './App.css';
 
 function App() {
   const { load, showOfflineModal, offlineBonus, closeOfflineModal } = useGameStore();
   const [isReady, setIsReady] = useState(false);
+  const [activeTab, setActiveTab] = useState('game'); // 'game', 'leaders', 'stats'
   const isInitialMount = useRef(true);
 
   useEffect(() => {
-    // Защита от двойного вызова в StrictMode
     if (isInitialMount.current) {
       const tg = window.Telegram?.WebApp;
       if (tg) {
         tg.ready();
         tg.expand();
       }
-      
-      load().finally(() => {
-        setIsReady(true);
-      });
-      
+      load().finally(() => setIsReady(true));
       isInitialMount.current = false;
     }
   }, [load]);
 
-  if (!isReady) {
-    return (
-      <div className="min-h-screen bg-[#0a0c1a] flex items-center justify-center text-white">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-lg font-medium">Загрузка данных...</p>
-        </div>
-      </div>
-    );
-  }
+  if (!isReady) return <div className="loading">Загрузка...</div>;
 
   return (
-    <div className="min-h-screen bg-[#0a0c1a] text-white overflow-hidden">
-      <Game />
+    <div className="app-wrapper">
+      <div className="content-area">
+        {activeTab === 'game' && <Game />}
+        {activeTab === 'leaders' && <Leaderboard />}
+        {activeTab === 'stats' && <Stats />}
+      </div>
+
+      {/* Нижнее меню навигации */}
+      <nav className="tab-bar">
+        <button 
+          className={`tab-item ${activeTab === 'game' ? 'active' : ''}`}
+          onClick={() => setActiveTab('game')}
+        >
+          <span className="tab-icon">⛏️</span>
+          <span>Игра</span>
+        </button>
+        
+        <button 
+          className={`tab-item ${activeTab === 'leaders' ? 'active' : ''}`}
+          onClick={() => setActiveTab('leaders')}
+        >
+          <span className="tab-icon">🏆</span>
+          <span>Лидеры</span>
+        </button>
+
+        <button 
+          className={`tab-item ${activeTab === 'stats' ? 'active' : ''}`}
+          onClick={() => setActiveTab('stats')}
+        >
+          <span className="tab-icon">📊</span>
+          <span>Инфо</span>
+        </button>
+      </nav>
       
-      {/* Теперь модалка полностью управляется стором и не зависит от ререндеров */}
       {showOfflineModal && (
-        <OfflineModal 
-          amount={offlineBonus} 
-          onClose={closeOfflineModal} 
-        />
+        <OfflineModal amount={offlineBonus} onClose={closeOfflineModal} />
       )}
     </div>
   );
