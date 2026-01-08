@@ -1,34 +1,37 @@
-import React, { useEffect } from 'react';
-import { useGameStore } from '../store/gameStore';
+import { useEffect, useState } from 'react';
 
-const Leaderboard: React.FC = () => {
-  const { leaderboard, loadLeaderboard } = useGameStore();
+interface Leader {
+  firstName: string;
+  coins: number;
+}
+
+const Leaderboard = () => {
+  const [leaders, setLeaders] = useState<Leader[]>([]);
 
   useEffect(() => {
-    loadLeaderboard();
-  }, [loadLeaderboard]);
+    // Загружаем список лидеров при открытии вкладки
+    fetch(`${import.meta.env.VITE_API_URL}/game/leaderboard`)
+      .then(res => res.json())
+      .then(data => setLeaders(data));
+  }, []);
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-black mb-6 text-center text-yellow-500">ТОП ШАХТЕРОВ</h2>
-      <div className="bg-[#1e293b] rounded-3xl overflow-hidden shadow-xl border border-slate-700">
-        {leaderboard.length > 0 ? (
-          leaderboard.map((user, index) => (
-            <div key={user.telegramId} className="flex items-center justify-between p-4 border-b border-slate-700 last:border-0">
-              <div className="flex items-center gap-4">
-                <span className={`w-8 h-8 flex items-center justify-center rounded-full font-bold ${index < 3 ? 'bg-yellow-500 text-black' : 'bg-slate-800 text-white'}`}>
-                  {index + 1}
-                </span>
-                <span className="font-bold text-white">
-                  {user.firstName} {index === 0 ? '👑' : ''}
-                </span>
-              </div>
-              <span className="font-bold text-yellow-500">{Math.floor(user.coins).toLocaleString()} 💰</span>
+    <div className="p-4 flex flex-col gap-4">
+      <h1 className="text-2xl font-black uppercase italic text-blue-400">Топ игроков</h1>
+      <div className="bg-white/5 rounded-3xl border border-white/5 overflow-hidden">
+        {leaders.map((user, index) => (
+          <div key={index} className="flex justify-between items-center p-4 border-b border-white/5 last:border-0">
+            <div className="flex items-center gap-3">
+              <span className={`w-6 text-center font-bold ${index < 3 ? 'text-yellow-500' : 'text-slate-500'}`}>
+                {index + 1}
+              </span>
+              <span className="font-bold">{user.firstName}</span>
             </div>
-          ))
-        ) : (
-          <div className="p-8 text-center text-slate-400">Загрузка списка...</div>
-        )}
+            <div className="flex items-center gap-1 font-black text-yellow-500">
+              {Math.floor(user.coins).toLocaleString()} 💰
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
