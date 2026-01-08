@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useGameStore } from './store/gameStore';
+import OfflineModal from './components/OfflineModal';
 import PlanetSelection from './pages/PlanetSelection';
 import MineSelection from './pages/MineSelection';
 import Game from './pages/Game';
@@ -41,6 +42,7 @@ function App() {
 
   return (
     <div className="app-container">
+      <OfflineModal />
       <header className="app-header">
         <button className="menu-toggle" onClick={() => setIsMenuOpen(true)}>
            <span></span><span></span><span></span>
