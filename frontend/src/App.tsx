@@ -45,7 +45,7 @@ function App() {
         <button className="menu-toggle" onClick={() => setIsMenuOpen(true)}>
            <span></span><span></span><span></span>
         </button>
-        <h1 className="logo text-yellow-500">GOLD MINER</h1>
+        <h1 className="logo text-yellow-500">PLANET MINER</h1>
         <div className="w-8"></div>
       </header>
 
