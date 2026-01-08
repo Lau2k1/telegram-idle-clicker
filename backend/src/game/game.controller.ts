@@ -36,25 +36,35 @@ export class GameController {
     return this.gameService.upgrade(Number(userId), type);
   }
 
-  @Post("create-boost-invoice")
-  async createInvoice(@Query("userId") userId: string) {
-    const response = await fetch(
-      `https://api.telegram.org/bot${this.BOT_TOKEN}/createInvoiceLink`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: "Буст x2",
-          description: "Удвоение добычи на 24 часа",
-          payload: `boost_24h_${userId}`,
-          currency: "XTR",
-          prices: [{ label: " Stars", amount: 50 }],
-        }),
-      }
-    );
+@Post('create-boost-invoice')
+async createInvoice(@Query('userId') userId: string) {
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${this.BOT_TOKEN}/createInvoiceLink`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: "Буст x2 (24ч)",
+        description: "Удвоение добычи ресурсов и силы клика",
+        payload: `boost_24h_${userId}`,
+        provider_token: "", // Для Telegram Stars это поле должно быть ПУСТЫМ
+        currency: "XTR",     // Код валюты для Telegram Stars
+        prices: [{ label: "Ускоритель", amount: 50 }] // Цена в Звездах
+      })
+    });
+
     const data = await response.json();
+
+    if (!data.ok) {
+      console.error("Ошибка Telegram API:", data);
+      return { error: data.description || "Ошибка API" };
+    }
+
     return { invoiceLink: data.result };
+  } catch (e) {
+    console.error("Ошибка сервера при создании счета:", e);
+    return { error: "Internal Server Error" };
   }
+}
 
   @Post("activate-boost")
   activateBoost(@Query("userId") userId: string) {
