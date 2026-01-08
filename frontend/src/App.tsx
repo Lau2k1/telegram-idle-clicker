@@ -48,7 +48,11 @@ function App() {
 
     // Синхронизация накопленных ресурсов с БД раз в 10 секунд
     const syncInterval = setInterval(() => {
-      if (unsyncedCoins.current > 0 || unsyncedOil.current > 0) {
+      const state = useGameStore.getState();
+      if (
+        !state.showOfflineModal &&
+        (unsyncedCoins.current > 0 || unsyncedOil.current > 0)
+      ) {
         syncOnline(unsyncedCoins.current, unsyncedOil.current);
         unsyncedCoins.current = 0;
         unsyncedOil.current = 0;
