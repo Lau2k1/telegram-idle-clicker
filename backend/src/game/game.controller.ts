@@ -16,23 +16,22 @@ export class GameController {
   }
 
   @Post('upgrade')
-  upgrade(@Query('userId') userId: string, @Query('type') type: 'click' | 'income' | 'limit') {
+  upgrade(@Query('userId') userId: string, @Query('type') type: any) {
     return this.gameService.upgrade(Number(userId), type);
   }
 
   @Post('sync')
-  sync(@Query('userId') userId: string, @Body() body: { earned: number }) {
-    return this.gameService.syncCoins(Number(userId), body.earned);
+  sync(@Query('userId') userId: string, @Body() body: { earnedCoins: number, earnedOil: number }) {
+    return this.gameService.syncResources(Number(userId), body.earnedCoins, body.earnedOil);
+  }
+
+  @Post('process-oil')
+  processOil(@Query('userId') userId: string, @Query('amount') amount: string) {
+    return this.gameService.startProcessing(Number(userId), Number(amount));
   }
 
   @Get('leaderboard')
   getLeaderboard() {
     return this.gameService.getLeaderboard();
   }
-
- @Post('process-oil')
-  startProcessing(@Query('userId') userId: string, @Query('amount') amount: string) {
-    return this.gameService.startProcessing(Number(userId), Number(amount));
-}
-
 }
