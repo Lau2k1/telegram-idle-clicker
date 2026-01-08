@@ -53,20 +53,6 @@ async getState(telegramId: number, firstName?: string) {
   return this.serializeUser(user);
 }
 
-// Убедитесь, что serializeUser возвращает топливо!
-private serializeUser(user: any) {
-  return {
-    ...user,
-    telegramId: user.telegramId.toString(),
-    coins: Number(user.coins),
-    oil: Number(user.oil),
-    fuel: Number(user.fuel || 0), // Проверьте эту строку!
-    incomePerSec: Number(user.incomePerSec),
-    oilPerSec: Number(user.oilPerSec),
-    clickPower: Number(user.clickPower)
-  };
-}
-
   // МЕТОД ДЛЯ СОХРАНЕНИЯ ОНЛАЙН ДОХОДА
   async sync(telegramId: number, earnedCoins: number, earnedOil: number) {
     const tid = BigInt(telegramId);
@@ -215,6 +201,7 @@ async startRefining(telegramId: number, type: string, amount: number) {
       telegramId: user.telegramId.toString(),
       coins: Number(user.coins),
       oil: Number(user.oil),
+       fuel: Number(user.fuel || 0),
       clickPower: Number(user.clickPower),
       incomePerSec: Number(user.incomePerSec),
       oilPerSec: Number(user.oilPerSec),
