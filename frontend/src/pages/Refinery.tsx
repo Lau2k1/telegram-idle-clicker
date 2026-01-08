@@ -1,63 +1,79 @@
+import { useState, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
+import { formatComplexTime } from '../utils/time';
 
 const Refinery = () => {
-  const { oil, fuel, coins } = useGameStore();
+  const { coins, oil, fuel, load } = useGameStore();
+  const [amount, setAmount] = useState(1);
+  const [loading, setLoading] = useState(false);
+
+  // Функция для запуска
+  const handleStart = async (type: 'oil' | 'fuel') => {
+    setLoading(true);
+    const userId = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id || 12345;
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL}/game/start-refining?userId=${userId}&type=${type}&amount=${amount}`, { method: 'POST' });
+      await load(); // Обновляем состояние, чтобы увидеть таймер
+    } catch (e) {
+      alert("Ошибка запуска");
+    }
+    setLoading(false);
+  };
 
   return (
-    <div className="p-4 flex flex-col gap-6 animate-in slide-in-from-bottom duration-500">
-      <div className="flex items-center gap-3">
-        <span className="text-4xl">🏭</span>
-        <div>
-          <h1 className="text-2xl font-black uppercase tracking-tighter text-blue-400">Завод</h1>
-          <p className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em]">Переработка ресурсов</p>
-        </div>
-      </div>
+    <div className="p-4 flex flex-col gap-6">
+      <h1 className="text-2xl font-black uppercase tracking-tighter text-blue-400">Завод</h1>
 
-      {/* Баланс Топлива */}
-      <div className="bg-gradient-to-r from-orange-600 to-red-600 p-6 rounded-[32px] shadow-lg">
-        <div className="text-[10px] uppercase font-black opacity-70 mb-1 text-white">Ракетное Топливо</div>
-        <div className="flex items-center gap-3">
-          <span className="text-3xl">🚀</span>
-          <span className="text-3xl font-black">{Math.floor(fuel).toLocaleString()}</span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4">
-        {/* Цех 1: Золото -> Нефть */}
-        <div className="bg-white/5 border border-white/5 p-5 rounded-[32px] flex flex-col gap-4">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="font-black uppercase text-sm">Синтез Нефти</h3>
-              <p className="text-[10px] text-slate-500 font-bold uppercase">100 💰 → 1 🛢️</p>
-            </div>
-            <span className="bg-blue-500/20 text-blue-400 text-[10px] px-2 py-1 rounded-full font-bold">10 сек</span>
+      {/* Выбор количества */}
+      <div className="bg-white/5 p-6 rounded-[32px] border border-white/10">
+        <label className="text-[10px] uppercase font-black text-slate-500 mb-2 block">Количество для переработки</label>
+        <div className="flex items-center gap-4">
+          <input 
+            type="number" 
+            value={amount} 
+            onChange={(e) => setAmount(Math.max(1, parseInt(e.target.value) || 1))}
+            className="flex-1 bg-black/40 border border-white/10 rounded-2xl py-3 px-4 font-black text-xl outline-none focus:border-blue-500 transition-all"
+          />
+          <div className="flex gap-2">
+            {[10, 50, 100].map(v => (
+              <button key={v} onClick={() => setAmount(v)} className="bg-white/5 px-3 py-2 rounded-xl text-xs font-bold hover:bg-white/10">{v}</button>
+            ))}
           </div>
-          <button className="w-full bg-white/10 hover:bg-white/20 py-3 rounded-2xl font-black uppercase text-xs transition-all">
-            Начать процесс
-          </button>
         </div>
+      </div>
 
-        {/* Цех 2: Нефть -> Топливо */}
-        <div className="bg-white/5 border border-white/10 p-5 rounded-[32px] flex flex-col gap-4 border-l-orange-500 border-l-4">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="font-black uppercase text-sm text-orange-400">Производство Топлива</h3>
-              <p className="text-[10px] text-slate-500 font-bold uppercase">25 🛢️ → 1 🚀</p>
-            </div>
-            <span className="bg-orange-500/20 text-orange-400 text-[10px] px-2 py-1 rounded-full font-bold">100 сек</span>
+      {/* Кнопки запуска */}
+      <div className="grid grid-cols-1 gap-4">
+        {/* Золото -> Нефть */}
+        <div className="bg-white/5 p-5 rounded-[32px] border border-white/5">
+          <div className="flex justify-between mb-4">
+            <span className="font-bold">Синтез Нефти</span>
+            <span className="text-blue-400 font-black">{amount * 100} 💰</span>
           </div>
           <button 
-            disabled={oil < 25}
-            className={`w-full py-3 rounded-2xl font-black uppercase text-xs transition-all ${oil >= 25 ? 'bg-orange-600 text-white' : 'bg-white/5 text-slate-600'}`}
+            onClick={() => handleStart('oil')}
+            disabled={coins < amount * 100 || loading}
+            className="w-full bg-blue-600 disabled:opacity-30 py-4 rounded-2xl font-black uppercase text-sm"
           >
-            {oil >= 25 ? 'Запустить реактор' : 'Недостаточно нефти'}
+            Начать ({formatComplexTime(amount * 10)})
+          </button>
+        </div>
+
+        {/* Нефть -> Топливо */}
+        <div className="bg-white/5 p-5 rounded-[32px] border border-white/5">
+          <div className="flex justify-between mb-4">
+            <span className="font-bold">Реактор Топлива</span>
+            <span className="text-orange-500 font-black">{amount * 25} 🛢️</span>
+          </div>
+          <button 
+            onClick={() => handleStart('fuel')}
+            disabled={oil < amount * 25 || loading}
+            className="w-full bg-orange-600 disabled:opacity-30 py-4 rounded-2xl font-black uppercase text-sm"
+          >
+            Начать ({formatComplexTime(amount * 100)})
           </button>
         </div>
       </div>
-      
-      <p className="text-center text-[10px] text-slate-600 uppercase font-bold px-10">
-        Топливо необходимо для заправки корабля и полетов на другие планеты.
-      </p>
     </div>
   );
 };

@@ -22,4 +22,7 @@ model User {
   processingUntil   DateTime?
   lastUpdate        DateTime  @default(now())
   fuel        Float    @default(0)
+  refiningOilUntil   DateTime?
+  refiningFuelUntil  DateTime?
+  refiningAmount     Int @default(0)
 }

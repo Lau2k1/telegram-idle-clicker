@@ -155,25 +155,46 @@ async upgrade(telegramId: number, type: string) {
   return this.serializeUser(updated);
 }
 
-async startRefiningOil(telegramId: number) {
+async startRefining(telegramId: number, type: 'oil' | 'fuel', amount: number) {
   const tid = BigInt(telegramId);
   const user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
-  
-  const OIL_COST = 25;
-  if (Number(user.oil) < OIL_COST) throw new Error("Недостаточно нефти");
+  if (!user) return null;
 
-  // Время переработки в 10 раз дольше, чем у золота (например, 100 секунд)
-  const refiningTime = 100; 
+  const now = new Date();
+  
+  // Проверяем, не занят ли завод
+  if (type === 'oil' && user.refiningOilUntil && user.refiningOilUntil > now) throw new Error("Завод уже перерабатывает золото");
+  if (type === 'fuel' && user.refiningFuelUntil && user.refiningFuelUntil > now) throw new Error("Реактор уже перерабатывает нефть");
+
+  let cost = 0;
+  let duration = 0;
+  let updateField = {};
+
+  if (type === 'oil') {
+    cost = amount * 100; // 100 золота за 1 нефть
+    if (Number(user.coins) < cost) throw new Error("Недостаточно золота");
+    duration = amount * 10; // 10 секунд на единицу
+    updateField = { 
+      coins: { decrement: cost },
+      refiningOilUntil: new Date(now.getTime() + duration * 1000),
+      refiningAmount: amount 
+    };
+  } else {
+    cost = amount * 25; // 25 нефти за 1 топливо
+    if (Number(user.oil) < cost) throw new Error("Недостаточно нефти");
+    duration = amount * 100; // 100 секунд на единицу
+    updateField = { 
+      oil: { decrement: cost },
+      refiningFuelUntil: new Date(now.getTime() + duration * 1000),
+      refiningAmount: amount 
+    };
+  }
 
   return await this.prisma.user.update({
     where: { telegramId: tid },
-    data: {
-      oil: { decrement: OIL_COST },
-      // Логика таймера (нужно добавить поля в БД для отслеживания процесса)
-    }
+    data: updateField
   });
 }
-
   private serializeUser(user: any) {
     return {
       ...user,
