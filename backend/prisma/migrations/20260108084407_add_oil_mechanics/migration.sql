@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "oil" DOUBLE PRECISION NOT NULL DEFAULT 0,
+ADD COLUMN     "processingUntil" TIMESTAMP(3);

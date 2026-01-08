@@ -5,6 +5,7 @@ import Shop from './pages/Shop';
 import Leaderboard from './pages/Leaderboard';
 import Stats from './pages/Stats';
 import OfflineModal from './components/OfflineModal';
+import Refinery from './pages/Refinery';
 import './App.css';
 
 function App() {
@@ -49,7 +50,7 @@ function App() {
 
   const navigate = (p: string) => { setActivePage(p); setIsMenuOpen(false); };
 
-  if (!isReady) return <div className="h-screen bg-[#0a0c1a] flex items-center justify-center text-yellow-500 font-bold">ЗАГРУЗКА...</div>;
+  if (!isReady) return <div className="h-screen bg-[#0a0c1a] flex items-center justify-center text-yellow-500 font-bold">ЗАГРУЗКА...⌛</div>;
 
   return (
     <div className="app-container">
@@ -64,6 +65,7 @@ function App() {
       <main className="main-content">
         {activePage === 'game' && <Game />}
         {activePage === 'shop' && <Shop />}
+        {activePage === 'refinery' && <Refinery />}
         {activePage === 'leaders' && <Leaderboard />}
         {activePage === 'stats' && <Stats />}
       </main>
@@ -73,6 +75,7 @@ function App() {
           <h2 className="text-yellow-500 font-black mb-6 text-xl">МЕНЮ</h2>
           <button onClick={() => navigate('game')} className={`menu-item ${activePage === 'game' ? 'active' : ''}`}>⛏️ Майнинг</button>
           <button onClick={() => navigate('shop')} className={`menu-item ${activePage === 'shop' ? 'active' : ''}`}>🛒 Магазин</button>
+          <button onClick={() => navigate('refinery')} className={`menu-item ${activePage === 'refinery' ? 'active' : ''}`}>🏭 Переработка</button>
           <button onClick={() => navigate('leaders')} className={`menu-item ${activePage === 'leaders' ? 'active' : ''}`}>🏆 Лидеры</button>
           <button onClick={() => navigate('stats')} className={`menu-item ${activePage === 'stats' ? 'active' : ''}`}>📊 Статистика</button>
         </div>
