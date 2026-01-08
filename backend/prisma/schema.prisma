@@ -16,8 +16,9 @@ model User {
   clickPower        Int       @default(1)
   incomePerSec      Int       @default(0)
   oilPerSec         Float     @default(0)
-  maxOfflineTime    Int       @default(3600) // Лимит золота
-  maxOilOfflineTime Int       @default(3600) // Лимит нефти
+  maxOfflineTime    Int       @default(3600)
+  maxOilOfflineTime Int       @default(3600)
+  boostUntil        DateTime? // Время окончания x2 буста
   processingUntil   DateTime?
   lastUpdate        DateTime  @default(now())
 }

@@ -5,30 +5,22 @@ interface GameState {
   oil: number;
   clickPower: number;
   incomePerSec: number;
-  oilPerSec: number;
-  maxOfflineTime: number;
-  maxOilOfflineTime: number;
-  processingUntil: string | null;
+  boostUntil: string | null;
+  isBoostActive: boolean;
   offlineBonus: number;
   offlineOilBonus: number;
   showOfflineModal: boolean;
-  leaderboard: any[];
   load: () => Promise<void>;
-  addResources: (c: number, o: number) => void;
   click: () => Promise<void>;
-  syncOnline: (c: number, o: number) => Promise<void>;
   buyUpgrade: (type: string) => Promise<void>;
-  loadLeaderboard: () => Promise<void>;
-  startProcessing: (amount: number) => Promise<void>;
+  buyBoost: () => Promise<void>;
   closeOfflineModal: () => void;
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
-  coins: 0, oil: 0, clickPower: 1, incomePerSec: 0, oilPerSec: 0,
-  maxOfflineTime: 3600, maxOilOfflineTime: 3600, processingUntil: null,
-  offlineBonus: 0, offlineOilBonus: 0, showOfflineModal: false, leaderboard: [],
-
-  addResources: (c, o) => set(s => ({ coins: s.coins + c, oil: s.oil + o })),
+  coins: 0, oil: 0, clickPower: 1, incomePerSec: 0,
+  boostUntil: null, isBoostActive: false,
+  offlineBonus: 0, offlineOilBonus: 0, showOfflineModal: false,
 
   load: async () => {
     const userId = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id || 12345;
@@ -41,20 +33,36 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   click: async () => {
-    const { coins, clickPower } = get();
-    set({ coins: coins + clickPower });
-    fetch(`${import.meta.env.VITE_API_URL}/game/click?userId=${(window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id || 12345}`, { method: 'POST' });
+    const { coins, clickPower, isBoostActive } = get();
+    const power = isBoostActive ? clickPower * 2 : clickPower;
+    set({ coins: coins + power });
+    
+    const userId = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id || 12345;
+    fetch(`${import.meta.env.VITE_API_URL}/game/click?userId=${userId}`, { method: 'POST' });
   },
 
-  syncOnline: async (c, o) => {
+  buyBoost: async () => {
     const userId = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id || 12345;
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/game/sync?userId=${userId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ earnedCoins: c, earnedOil: o })
-    });
-    const data = await res.json();
-    if (data) set({ coins: data.coins, oil: data.oil });
+    const tg = (window as any).Telegram?.WebApp;
+
+    try {
+      // 1. Запрашиваем инвойс у бэкенда
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/game/create-boost-invoice?userId=${userId}`, { method: 'POST' });
+      const { invoiceLink } = await res.json();
+
+      // 2. Открываем окно оплаты Telegram Stars
+      tg.openInvoice(invoiceLink, async (status: string) => {
+        if (status === 'paid' || status === 'pending') {
+          // 3. Активируем буст
+          const actRes = await fetch(`${import.meta.env.VITE_API_URL}/game/activate-boost?userId=${userId}`, { method: 'POST' });
+          const newData = await actRes.json();
+          set({ boostUntil: newData.boostUntil, isBoostActive: true });
+          tg.showAlert("Ускорение x2 активировано на 24 часа!");
+        }
+      });
+    } catch (e) {
+      tg.showAlert("Ошибка при создании платежа");
+    }
   },
 
   buyUpgrade: async (type) => {
@@ -62,19 +70,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     const res = await fetch(`${import.meta.env.VITE_API_URL}/game/upgrade?userId=${userId}&type=${type}`, { method: 'POST' });
     const data = await res.json();
     if (data) set({ ...data });
-  },
-
-  loadLeaderboard: async () => {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/game/leaderboard`);
-    const data = await res.json();
-    set({ leaderboard: data });
-  },
-
-  startProcessing: async (amount) => {
-    const userId = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id || 12345;
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/game/process-oil?userId=${userId}&amount=${amount}`, { method: 'POST' });
-    const data = await res.json();
-    if (data) set({ coins: data.coins, oil: data.oil, processingUntil: data.processingUntil });
   },
 
   closeOfflineModal: () => set({ showOfflineModal: false, offlineBonus: 0, offlineOilBonus: 0 })

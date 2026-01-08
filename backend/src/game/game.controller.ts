@@ -6,8 +6,8 @@ export class GameController {
   constructor(private readonly gameService: GameService) {}
 
   @Get('state')
-  getState(@Query('userId') userId: string, @Query('name') name?: string) {
-    return this.gameService.getState(Number(userId), name);
+  getState(@Query('userId') userId: string) {
+    return this.gameService.getState(Number(userId));
   }
 
   @Post('click')
@@ -16,22 +16,21 @@ export class GameController {
   }
 
   @Post('upgrade')
-  upgrade(@Query('userId') userId: string, @Query('type') type: any) {
+  upgrade(@Query('userId') userId: string, @Query('type') type: string) {
     return this.gameService.upgrade(Number(userId), type);
   }
 
-  @Post('sync')
-  sync(@Query('userId') userId: string, @Body() body: { earnedCoins: number, earnedOil: number }) {
-    return this.gameService.syncResources(Number(userId), body.earnedCoins, body.earnedOil);
+  // Эндпоинт для получения ссылки на оплату
+  @Post('create-boost-invoice')
+  async createInvoice(@Query('userId') userId: string) {
+    // ВАЖНО: Здесь должна быть логика вызова Telegram Bot API
+    // Пример ссылки для теста (в реальности вызывается bot.createInvoiceLink)
+    return { invoiceLink: "https://t.me/invoice/example_stars_link" };
   }
 
-  @Post('process-oil')
-  processOil(@Query('userId') userId: string, @Query('amount') amount: string) {
-    return this.gameService.startProcessing(Number(userId), Number(amount));
-  }
-
-  @Get('leaderboard')
-  getLeaderboard() {
-    return this.gameService.getLeaderboard();
+  // Эндпоинт подтверждения (в идеале вызывается вебхуком бота)
+  @Post('activate-boost')
+  activateBoost(@Query('userId') userId: string) {
+    return this.gameService.activateBoost(Number(userId), 24);
   }
 }
