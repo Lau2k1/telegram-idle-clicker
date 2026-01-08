@@ -24,5 +24,6 @@ model User {
   fuel        Float    @default(0)
   refiningOilUntil   DateTime?
   refiningFuelUntil  DateTime?
-  refiningAmount     Int @default(0)
+  refiningOilAmount   Int @default(0)  // Количество для нефти
+  refiningFuelAmount  Int @default(0) // Количество для топлива
 }
