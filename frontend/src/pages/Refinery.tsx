@@ -34,7 +34,7 @@ const Refinery: React.FC = () => {
         </div>
         <div className="flex-1 bg-[#1a1c2c] p-4 rounded-3xl border border-slate-700 text-center">
           <div className="text-xs text-slate-400">НЕФТЬ</div>
-          <div className="text-xl font-bold text-blue-500">{oil} 🛢️</div>
+          <div className="text-xl font-bold text-blue-500">{oil.toFixed(2)} 🛢️</div>
         </div>
       </div>
 
