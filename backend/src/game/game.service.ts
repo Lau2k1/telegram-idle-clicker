@@ -214,12 +214,18 @@ export class GameService {
   }
 
   private serializeUser(user: any) {
+
+    const now = new Date();
+    const isBoostActive = user.boostUntil ? new Date(user.boostUntil) > now : false;
+
     return {
       ...user,
       telegramId: user.telegramId.toString(),
       coins: Number(user.coins),
       oil: Number(user.oil),
       fuel: Number(user.fuel || 0),
+      isBoostActive: isBoostActive, // Передаем статус активности
+      boostUntil: user.boostUntil ? user.boostUntil.toISOString() : null,
       incomePerSec: Number(user.incomePerSec),
       oilPerSec: Number(user.oilPerSec),
       clickPower: Number(user.clickPower),

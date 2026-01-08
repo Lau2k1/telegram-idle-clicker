@@ -37,7 +37,7 @@ function App() {
       const multiplier = state.isBoostActive ? 2 : 1;
 
       const goldToAdd = state.incomePerSec * multiplier;
-      const oilToAdd = state.oilPerSec;
+      const oilToAdd = state.oilPerSec * multiplier;
 
       if (goldToAdd > 0 || oilToAdd > 0) {
         addResources(goldToAdd, oilToAdd);
