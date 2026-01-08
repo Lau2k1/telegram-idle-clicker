@@ -13,33 +13,58 @@ export class GameService {
 async getState(telegramId: number, firstName?: string) {
   const tid = BigInt(telegramId);
   let user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
-  if (!user) user = await this.prisma.user.create({ data: { telegramId: tid, firstName: firstName || "Аноним" } });
+  
+  if (!user) {
+    user = await this.prisma.user.create({ data: { telegramId: tid, firstName: firstName || "Аноним" } });
+  }
 
   const now = new Date();
   let needsUpdate = false;
-  let updateData: any = {};
+  const updateData: any = {};
 
-  // Проверка завершения переработки Золото -> Нефть
+  // Проверка завершения Золото -> Нефть
   if (user.refiningOilUntil && user.refiningOilUntil <= now) {
     updateData.oil = { increment: user.refiningAmount };
-    updateData.refiningOilUntil = null;
-    updateData.refiningAmount = 0;
+    updateData.refiningOilUntil = null; // Сбрасываем таймер
+    // Мы не обнуляем refiningAmount здесь, если он общий, 
+    // но лучше обнулить после всех проверок
     needsUpdate = true;
   }
 
-  // Проверка завершения переработки Нефть -> Топливо
+  // Проверка завершения Нефть -> Топливо
   if (user.refiningFuelUntil && user.refiningFuelUntil <= now) {
     updateData.fuel = { increment: user.refiningAmount };
-    updateData.refiningFuelUntil = null;
-    updateData.refiningAmount = 0;
+    updateData.refiningFuelUntil = null; // Сбрасываем таймер
     needsUpdate = true;
   }
 
   if (needsUpdate) {
-    user = await this.prisma.user.update({ where: { telegramId: tid }, data: updateData });
+    // ВАЖНО: Обнуляем количество только если все процессы завершены или по отдельности
+    updateData.refiningAmount = 0;
+
+    // Ждем обновления в базе данных
+    user = await this.prisma.user.update({
+      where: { telegramId: tid },
+      data: updateData
+    });
+    console.log(`Ресурсы зачислены для пользователя ${tid}`);
   }
 
-  return this.serializeUser(user); // Не забудь добавить fuel в serializeUser
+  return this.serializeUser(user);
+}
+
+// Убедитесь, что serializeUser возвращает топливо!
+private serializeUser(user: any) {
+  return {
+    ...user,
+    telegramId: user.telegramId.toString(),
+    coins: Number(user.coins),
+    oil: Number(user.oil),
+    fuel: Number(user.fuel || 0), // Проверьте эту строку!
+    incomePerSec: Number(user.incomePerSec),
+    oilPerSec: Number(user.oilPerSec),
+    clickPower: Number(user.clickPower)
+  };
 }
 
   // МЕТОД ДЛЯ СОХРАНЕНИЯ ОНЛАЙН ДОХОДА

@@ -13,18 +13,20 @@ const RefiningTimer = ({ until, onComplete, label }: Props) => {
   useEffect(() => {
     const calculate = () => {
       const diff = Math.floor((new Date(until).getTime() - Date.now()) / 1000);
-      if (diff <= 0) {
-        onComplete();
-        return 0;
-      }
-      return diff;
+      return diff <= 0 ? 0 : diff;
     };
 
-    setTimeLeft(calculate());
     const interval = setInterval(() => {
       const remaining = calculate();
       setTimeLeft(remaining);
-      if (remaining <= 0) clearInterval(interval);
+
+      if (remaining <= 0) {
+        clearInterval(interval);
+        // Даем серверу 1 секунду форы, чтобы время точно истекло в БД
+        setTimeout(() => {
+          onComplete(); 
+        }, 1000);
+      }
     }, 1000);
 
     return () => clearInterval(interval);
