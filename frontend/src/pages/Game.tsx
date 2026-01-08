@@ -6,7 +6,7 @@ const Game = () => {
   const [animations, setAnimations] = useState<{ id: number; x: number; y: number; value: number }[]>([]);
 
   const handlePlanetClick = (e: React.MouseEvent | React.TouchEvent) => {
-    // Расчет значения с бустом
+    // ИСПРАВЛЕНИЕ: Рассчитываем значение с учетом буста для анимации
     const multiplier = isBoostActive ? 2 : 1;
     const clickValue = clickPower * multiplier;
 
@@ -17,7 +17,7 @@ const Game = () => {
 
     const id = Date.now();
     
-    // Добавляем анимацию с умноженным значением
+    // ИСПРАВЛЕНИЕ: Передаем clickValue вместо clickPower
     setAnimations(prev => [...prev, { id, x, y, value: clickValue }]);
 
     setTimeout(() => {
@@ -57,6 +57,7 @@ const Game = () => {
         <div className="flex items-center gap-3 bg-white/5 px-6 py-3 rounded-2xl border border-white/5">
           <span className="text-2xl">⚡</span>
           <span className="text-2xl font-black">
+            {/* ИСПРАВЛЕНИЕ: Здесь тоже показываем актуальное число с бустом */}
             {clickPower * (isBoostActive ? 2 : 1)}
           </span>
         </div>
