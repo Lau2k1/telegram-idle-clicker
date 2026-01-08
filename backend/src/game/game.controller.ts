@@ -29,10 +29,10 @@ export class GameController {
   getLeaderboard() {
     return this.gameService.getLeaderboard();
   }
-  
-  @Post('process-oil')
-  startProcessing(@Query('userId') userId: string) {
-    return this.gameService.startProcessing(Number(userId));
-  }
+
+ @Post('process-oil')
+  startProcessing(@Query('userId') userId: string, @Query('amount') amount: string) {
+    return this.gameService.startProcessing(Number(userId), Number(amount));
+}
 
 }

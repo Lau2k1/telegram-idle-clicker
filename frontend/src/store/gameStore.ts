@@ -6,26 +6,21 @@ const getTelegramUserId = (): number => {
 };
 
 interface GameState {
-  // Данные игрока
   coins: number;
   oil: number;
   clickPower: number;
   incomePerSec: number;
   maxOfflineTime: number;
   processingUntil: string | null;
-  
-  // Состояние UI
   offlineBonus: number;
   showOfflineModal: boolean;
   leaderboard: any[];
-
-  // Методы
   load: () => Promise<void>;
   addCoins: (amount: number) => void;
   click: () => Promise<void>;
   buyUpgrade: (type: 'click' | 'income' | 'limit') => Promise<void>;
   syncOnline: (earned: number) => Promise<void>;
-  startProcessing: () => Promise<void>;
+  startProcessing: (amount: number) => Promise<void>;
   loadLeaderboard: () => Promise<void>;
   closeOfflineModal: () => void;
 }
@@ -41,18 +36,14 @@ export const useGameStore = create<GameState>((set, get) => ({
   showOfflineModal: false,
   leaderboard: [],
 
-  // Визуальное добавление монет (для онлайн дохода)
   addCoins: (amount) => set((state) => ({ coins: state.coins + amount })),
 
   load: async () => {
-    const tg = (window as any).Telegram?.WebApp;
     const userId = getTelegramUserId();
-    const name = tg?.initDataUnsafe?.user?.first_name || "Шахтер";
-    
+    const name = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.first_name || "Шахтер";
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/game/state?userId=${userId}&name=${encodeURIComponent(name)}`);
       const data = await res.json();
-      
       set({
         coins: Number(data.coins),
         oil: Number(data.oil),
@@ -63,27 +54,18 @@ export const useGameStore = create<GameState>((set, get) => ({
         offlineBonus: Number(data.offlineBonus),
         showOfflineModal: Number(data.offlineBonus) > 0
       });
-    } catch (e) {
-      console.error("Load Error:", e);
-    }
+    } catch (e) { console.error(e); }
   },
 
   click: async () => {
-    const tg = (window as any).Telegram?.WebApp;
-    if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-    
-    // Оптимистичное обновление
     const { coins, clickPower } = get();
     set({ coins: coins + clickPower });
-    
     const userId = getTelegramUserId();
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/game/click?userId=${userId}`, { method: 'POST' });
       const data = await res.json();
       if (data) set({ coins: Number(data.coins) });
-    } catch (e) {
-      console.error("Click Error:", e);
-    }
+    } catch (e) { console.error(e); }
   },
 
   syncOnline: async (earned: number) => {
@@ -96,19 +78,15 @@ export const useGameStore = create<GameState>((set, get) => ({
       });
       const data = await res.json();
       if (data) set({ coins: Number(data.coins) });
-    } catch (e) {
-      console.error("Sync Error:", e);
-    }
+    } catch (e) { console.error(e); }
   },
 
   buyUpgrade: async (type) => {
-    const tg = (window as any).Telegram?.WebApp;
     const userId = getTelegramUserId();
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/game/upgrade?userId=${userId}&type=${type}`, { method: 'POST' });
       const data = await res.json();
       if (data) {
-        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
         set({
           coins: Number(data.coins),
           clickPower: Number(data.clickPower),
@@ -116,25 +94,22 @@ export const useGameStore = create<GameState>((set, get) => ({
           maxOfflineTime: Number(data.maxOfflineTime)
         });
       }
-    } catch (e) {
-      console.error("Upgrade Error:", e);
-    }
+    } catch (e) { console.error(e); }
   },
 
-  startProcessing: async () => {
+  startProcessing: async (amount: number) => {
     const userId = getTelegramUserId();
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/game/process-oil?userId=${userId}`, { method: 'POST' });
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/game/process-oil?userId=${userId}&amount=${amount}`, { method: 'POST' });
       const data = await res.json();
       if (data) {
         set({ 
-          coins: Number(data.coins), 
+          coins: Number(data.coins),
+          oil: Number(data.oil),
           processingUntil: data.processingUntil 
         });
       }
-    } catch (e) {
-      console.error("Processing Error:", e);
-    }
+    } catch (e) { console.error(e); }
   },
 
   loadLeaderboard: async () => {
@@ -142,9 +117,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       const res = await fetch(`${import.meta.env.VITE_API_URL}/game/leaderboard`);
       const data = await res.json();
       set({ leaderboard: data });
-    } catch (e) {
-      console.error("Leaderboard Error:", e);
-    }
+    } catch (e) { console.error(e); }
   },
 
   closeOfflineModal: () => set({ showOfflineModal: false, offlineBonus: 0 })
