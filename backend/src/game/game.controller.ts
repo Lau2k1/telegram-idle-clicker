@@ -3,8 +3,8 @@ import { GameService } from './game.service';
 
 @Controller('game')
 export class GameController {
-  // Замените на токен вашего бота из @BotFather
-  private readonly BOT_TOKEN = "8465844685:AAGnZ7rVhxpbrBiR2zW6abi7judVlyAt-oY"; 
+  // Замените на ваш реальный токен из @BotFather
+  private readonly BOT_TOKEN = "8465844685:AAGnZ7rVhxpbrBiR2zW6abi7judVlyAt-oY";
 
   constructor(private readonly gameService: GameService) {}
 
@@ -18,14 +18,26 @@ export class GameController {
     return this.gameService.click(Number(userId));
   }
 
+  /**
+   * СИНХРОНИЗАЦИЯ РЕСУРСОВ
+   * Принимает накопленные за 10 секунд ресурсы с фронтенда
+   */
+  @Post('sync')
+  sync(
+    @Query('userId') userId: string, 
+    @Body() body: { earnedCoins: number, earnedOil: number }
+  ) {
+    return this.gameService.sync(Number(userId), body.earnedCoins, body.earnedOil);
+  }
+
   @Post('upgrade')
   upgrade(@Query('userId') userId: string, @Query('type') type: string) {
     return this.gameService.upgrade(Number(userId), type);
   }
 
   /**
-   * 1. СОЗДАНИЕ СЧЕТА (ИНВОЙСА)
-   * Вызывается фронтендом, когда игрок жмет кнопку "50 Stars"
+   * СОЗДАНИЕ СЧЕТА TELEGRAM STARS
+   * Генерирует ссылку для оплаты
    */
   @Post('create-boost-invoice')
   async createInvoice(@Query('userId') userId: string) {
@@ -34,60 +46,49 @@ export class GameController {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: "Буст x2 Золото",
-          description: "Удвоение добычи и кликов на 24 часа",
-          payload: `boost_24h_${userId}`, // Информация, которая вернется в вебхуке
-          currency: "XTR", // Код валюты Telegram Stars
-          prices: [{ label: "Буст 24ч", amount: 50 }] // Цена в Stars
+          title: "Ускорение x2",
+          description: "Удваивает добычу золота и силу клика на 24 часа",
+          payload: `boost_24h_${userId}`,
+          currency: "XTR", // Код для Telegram Stars
+          prices: [{ label: "Активация", amount: 50 }] // 50 звезд
         })
       });
 
       const data = await response.json();
-      
-      if (!data.ok) {
-        console.error("Ошибка Telegram API:", data);
-        return { error: "Не удалось создать счет" };
-      }
+      if (!data.ok) throw new Error(data.description);
 
       return { invoiceLink: data.result };
     } catch (error) {
-      console.error("Invoice Error:", error);
-      return { error: "Ошибка сервера при создании счета" };
+      return { error: error.message };
     }
   }
 
   /**
-   * 2. ВЕБХУК ДЛЯ ПРИЕМА ОПЛАТЫ
-   * Сюда Telegram присылает данные, когда оплата прошла успешно
+   * АКТИВАЦИЯ БУСТА (ТЕСТОВАЯ)
+   * Можно вызвать вручную для проверки без оплаты
+   */
+  @Post('activate-boost')
+  activateBoost(@Query('userId') userId: string) {
+    return this.gameService.activateBoost(Number(userId), 24);
+  }
+
+  /**
+   * ВЕБХУК ДЛЯ ПРИЕМА ОПЛАТЫ
+   * Сюда Telegram постучится сам после успешной транзакции
    */
   @Post('webhook')
   @HttpCode(HttpStatus.OK)
   async handleWebhook(@Body() update: any) {
-    // Проверяем наличие успешной оплаты в сообщении
-    const successfulPayment = update.message?.successful_payment;
+    const payment = update.message?.successful_payment;
 
-    if (successfulPayment) {
-      const payload = successfulPayment.invoice_payload; // "boost_24h_12345"
-      const parts = payload.split('_');
-      
-      if (parts[0] === 'boost') {
-        const hours = Number(parts[1].replace('h', '')); // 24
-        const userId = Number(parts[2]); // 12345
+    if (payment) {
+      const payload = payment.invoice_payload; // "boost_24h_12345"
+      const userId = Number(payload.split('_')[2]);
+      const hours = Number(payload.split('_')[1].replace('h', ''));
 
-        // Активируем буст в базе данных через сервис
-        await this.gameService.activateBoost(userId, hours);
-        
-        console.log(`[PAYMENT] Буст на ${hours}ч активирован для ${userId}`);
-      }
+      await this.gameService.activateBoost(userId, hours);
     }
 
-    // Всегда возвращаем 200 OK, чтобы Telegram не слал уведомление повторно
     return { ok: true };
-  }
-
-  // Эндпоинт для ручной проверки/теста (опционально)
-  @Post('activate-boost-test')
-  async testBoost(@Query('userId') userId: string) {
-    return this.gameService.activateBoost(Number(userId), 24);
   }
 }
