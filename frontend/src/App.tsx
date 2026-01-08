@@ -24,16 +24,14 @@ function App() {
   const unsyncedCoins = useRef(0);
   const unsyncedOil = useRef(0);
 
-  // 1. ИНИЦИАЛИЗАЦИЯ: Загружаем данные только ОДИН раз при старте
   useEffect(() => {
     load();
   }, [load]);
 
-  // 2. ИГРОВОЙ ЦИКЛ: Тики и синхронизация
   useEffect(() => {
-    // Визуальный тик раз в секунду
     const visualInterval = setInterval(() => {
       const state = useGameStore.getState();
+      // Множитель x2
       const multiplier = state.isBoostActive ? 2 : 1;
 
       const goldToAdd = state.incomePerSec * multiplier;
@@ -46,13 +44,10 @@ function App() {
       }
     }, 1000);
 
-    // Синхронизация накопленных ресурсов с БД раз в 10 секунд
     const syncInterval = setInterval(() => {
       const state = useGameStore.getState();
-      if (
-        !state.showOfflineModal &&
-        (unsyncedCoins.current > 0 || unsyncedOil.current > 0)
-      ) {
+      // Синхронизируем только если модалка закрыта
+      if (!state.showOfflineModal && (unsyncedCoins.current > 0 || unsyncedOil.current > 0)) {
         syncOnline(unsyncedCoins.current, unsyncedOil.current);
         unsyncedCoins.current = 0;
         unsyncedOil.current = 0;
@@ -63,45 +58,43 @@ function App() {
       clearInterval(visualInterval);
       clearInterval(syncInterval);
     };
-    // Эффект обновляется только при изменении ключевых параметров добычи
+    // Добавляем зависимости, чтобы при активации буста интервал подхватил изменения
   }, [incomePerSec, oilPerSec, isBoostActive, addResources, syncOnline]);
 
   const renderPage = () => {
     switch (activePage) {
-      case "planets":
-        return <Game />;
-      case "oil":
-        return <OilMine />;
-      case "shop":
-        return <Shop />;
-      case "refinery":
-        return <Refinery />;
-      case "leaderboard":
-        return <Leaderboard />;
-      case "stats":
-        return <Stats />;
-      default:
-        return <Game />;
+      case "planets": return <Game />;
+      case "oil": return <OilMine />;
+      case "shop": return <Shop />;
+      case "refinery": return <Refinery />;
+      case "leaderboard": return <Leaderboard />;
+      case "stats": return <Stats />;
+      default: return <Game />;
     }
   };
 
+  // Вспомогательный компонент для отображения баланса с индикатором x2
+  const isBoost = useGameStore(s => s.isBoostActive);
+
   return (
     <div className="min-h-screen bg-[#0f111a] text-white select-none font-sans overflow-hidden flex flex-col">
-      {/* Модальное окно офлайна теперь не будет перекрываться повторными вызовами load */}
       <OfflineModal />
 
       <header className="h-20 shrink-0 p-4 flex justify-between bg-black/40 backdrop-blur-md z-40 border-b border-white/5">
+        {/* ЗОЛОТО */}
         <div className="flex flex-col">
-          <span className="text-[10px] text-yellow-500/70 uppercase font-black tracking-widest">
-            Золото
+          <span className="text-[10px] text-yellow-500/70 uppercase font-black tracking-widest flex items-center gap-1">
+            Золото {isBoost && <span className="text-[8px] bg-yellow-500 text-black px-1 rounded animate-pulse">x2</span>}
           </span>
           <div className="flex items-center gap-2">
             <span className="text-xl">💰</span>
-            <span className="font-black text-xl tracking-tighter">
+            <span className={`font-black text-xl tracking-tighter ${isBoost ? 'text-yellow-400' : ''}`}>
               {useGameStore((s) => Math.floor(s.coins).toLocaleString())}
             </span>
           </div>
         </div>
+
+        {/* ТОПЛИВО */}
         <div className="flex flex-col items-center px-2">
           <span className="text-[10px] text-orange-500/70 uppercase font-black tracking-widest leading-none mb-1">
             Fuel
@@ -113,12 +106,14 @@ function App() {
             <span className="text-sm">🚀</span>
           </div>
         </div>
+
+        {/* НЕФТЬ */}
         <div className="flex flex-col items-end">
-          <span className="text-[10px] text-blue-400/70 uppercase font-black tracking-widest">
-            Нефть
+          <span className="text-[10px] text-blue-400/70 uppercase font-black tracking-widest flex items-center gap-1">
+            {isBoost && <span className="text-[8px] bg-blue-500 text-white px-1 rounded animate-pulse">x2</span>} Нефть
           </span>
           <div className="flex items-center gap-2">
-            <span className="font-black text-xl text-blue-400">
+            <span className={`font-black text-xl tracking-tighter ${isBoost ? 'text-blue-400' : ''}`}>
               {useGameStore((s) => Math.floor(s.oil).toLocaleString())}
             </span>
             <span className="text-xl">🛢️</span>
@@ -128,38 +123,27 @@ function App() {
 
       <main className="flex-1 overflow-y-auto pb-32">{renderPage()}</main>
 
-      {/* Центральная кнопка Меню */}
+      {/* Меню управления */}
       <div className="fixed bottom-6 left-0 right-0 flex justify-center z-50 pointer-events-none">
         <button
           onClick={() => setIsMenuOpen(true)}
           className="pointer-events-auto flex flex-col items-center justify-center w-20 h-20 bg-blue-600 rounded-full border-4 border-[#1a1c2c] shadow-[0_10px_30px_rgba(37,99,235,0.6)] active:scale-95 transition-all"
         >
           <span className="text-2xl">🚀</span>
-          <span className="text-[10px] font-black uppercase tracking-widest">
-            Меню
-          </span>
+          <span className="text-[10px] font-black uppercase tracking-widest">Меню</span>
         </button>
       </div>
 
-      {/* Панель навигации */}
+      {/* Навигация */}
       {isMenuOpen && (
         <div className="fixed inset-0 bg-[#0f111a]/95 backdrop-blur-2xl z-[60] p-6 flex flex-col overflow-y-auto animate-in fade-in slide-in-from-bottom duration-300">
           <div className="flex justify-between items-center mb-10">
-            <h2 className="text-3xl font-black uppercase italic tracking-tighter">
-              Навигация
-            </h2>
-            <button
-              onClick={() => setIsMenuOpen(false)}
-              className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-xl"
-            >
-              ✕
-            </button>
+            <h2 className="text-3xl font-black uppercase italic tracking-tighter">Навигация</h2>
+            <button onClick={() => setIsMenuOpen(false)} className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-xl">✕</button>
           </div>
 
           <section className="mb-8">
-            <h3 className="text-slate-500 text-[12px] font-bold uppercase tracking-[0.2em] mb-4">
-              Планета
-            </h3>
+            <h3 className="text-slate-500 text-[12px] font-bold uppercase tracking-[0.2em] mb-4">Планета</h3>
             <div className="flex gap-4">
               <button className="flex-1 p-4 rounded-3xl bg-blue-600 border border-blue-400 flex flex-col items-center gap-2">
                 <span className="text-3xl">🌍</span>
@@ -173,45 +157,23 @@ function App() {
           </section>
 
           <section className="mb-8">
-            <h3 className="text-slate-500 text-[12px] font-bold uppercase tracking-[0.2em] mb-4">
-              Шахты Земли
-            </h3>
+            <h3 className="text-slate-500 text-[12px] font-bold uppercase tracking-[0.2em] mb-4">Шахты Земли</h3>
             <div className="grid grid-cols-1 gap-3">
               <button
-                onClick={() => {
-                  setActivePage("planets");
-                  setIsMenuOpen(false);
-                }}
-                className={`flex items-center gap-4 p-5 rounded-3xl border ${
-                  activePage === "planets"
-                    ? "bg-white/10 border-blue-500"
-                    : "bg-white/5 border-white/5"
-                }`}
+                onClick={() => { setActivePage("planets"); setIsMenuOpen(false); }}
+                className={`flex items-center gap-4 p-5 rounded-3xl border ${activePage === "planets" ? "bg-white/10 border-blue-500" : "bg-white/5 border-white/5"}`}
               >
-                <div className="w-12 h-12 bg-yellow-500/20 rounded-2xl flex items-center justify-center text-2xl">
-                  💰
-                </div>
+                <div className="w-12 h-12 bg-yellow-500/20 rounded-2xl flex items-center justify-center text-2xl">💰</div>
                 <div>
                   <div className="font-bold text-lg">Золотой прииск</div>
-                  <div className="text-xs text-slate-400">
-                    Клик и пассивный доход
-                  </div>
+                  <div className="text-xs text-slate-400">Клик и пассивный доход</div>
                 </div>
               </button>
               <button
-                onClick={() => {
-                  setActivePage("oil");
-                  setIsMenuOpen(false);
-                }}
-                className={`flex items-center gap-4 p-5 rounded-3xl border ${
-                  activePage === "oil"
-                    ? "bg-white/10 border-blue-500"
-                    : "bg-white/5 border-white/5"
-                }`}
+                onClick={() => { setActivePage("oil"); setIsMenuOpen(false); }}
+                className={`flex items-center gap-4 p-5 rounded-3xl border ${activePage === "oil" ? "bg-white/10 border-blue-500" : "bg-white/5 border-white/5"}`}
               >
-                <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center text-2xl">
-                  🛢️
-                </div>
+                <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center text-2xl">🛢️</div>
                 <div>
                   <div className="font-bold text-lg">Нефтяная вышка</div>
                   <div className="text-xs text-slate-400">Добыча нефти</div>
@@ -221,9 +183,7 @@ function App() {
           </section>
 
           <section>
-            <h3 className="text-slate-500 text-[12px] font-bold uppercase tracking-[0.2em] mb-4">
-              Сервисы
-            </h3>
+            <h3 className="text-slate-500 text-[12px] font-bold uppercase tracking-[0.2em] mb-4">Сервисы</h3>
             <div className="grid grid-cols-2 gap-3">
               {[
                 { id: "shop", l: "Магазин", i: "🛒" },
@@ -233,15 +193,8 @@ function App() {
               ].map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => {
-                    setActivePage(item.id);
-                    setIsMenuOpen(false);
-                  }}
-                  className={`flex items-center gap-3 p-4 rounded-2xl border transition-colors ${
-                    activePage === item.id
-                      ? "bg-blue-600 border-blue-400"
-                      : "bg-white/5 border-white/5 active:bg-white/10"
-                  }`}
+                  onClick={() => { setActivePage(item.id); setIsMenuOpen(false); }}
+                  className={`flex items-center gap-3 p-4 rounded-2xl border transition-colors ${activePage === item.id ? "bg-blue-600 border-blue-400" : "bg-white/5 border-white/5 active:bg-white/10"}`}
                 >
                   <span>{item.i}</span>
                   <span className="font-bold text-sm">{item.l}</span>
