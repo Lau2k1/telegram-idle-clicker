@@ -210,3 +210,4 @@ async startRefining(telegramId: number, type: string, amount: number) {
     refiningAmount: user.refiningAmount || 0,
   };
 }
+}
