@@ -6,18 +6,14 @@ export class GameService {
   constructor(private prisma: PrismaService) {}
 
   private getMultiplier(user: any): number {
-    if (user.boostUntil && new Date(user.boostUntil) > new Date()) {
-      return 2;
-    }
+    if (user.boostUntil && new Date(user.boostUntil) > new Date()) return 2;
     return 1;
   }
 
   async getState(telegramId: number, firstName?: string) {
     const tid = BigInt(telegramId);
     let user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
-    if (!user) {
-      user = await this.prisma.user.create({ data: { telegramId: tid, firstName: firstName || "Аноним" } });
-    }
+    if (!user) user = await this.prisma.user.create({ data: { telegramId: tid, firstName: firstName || "Аноним" } });
 
     const now = new Date();
     const lastUpdate = new Date(user.lastUpdate);
@@ -28,10 +24,8 @@ export class GameService {
     let offlineOil = 0;
 
     if (totalSecondsOffline >= 10) {
-      const goldSeconds = Math.min(totalSecondsOffline, user.maxOfflineTime);
-      offlineCoins = goldSeconds * user.incomePerSec * multiplier;
-      const oilSeconds = Math.min(totalSecondsOffline, user.maxOilOfflineTime);
-      offlineOil = oilSeconds * user.oilPerSec;
+      offlineCoins = Math.min(totalSecondsOffline, user.maxOfflineTime) * user.incomePerSec * multiplier;
+      offlineOil = Math.min(totalSecondsOffline, user.maxOilOfflineTime) * user.oilPerSec;
     }
 
     const updatedUser = await this.prisma.user.update({
@@ -42,26 +36,29 @@ export class GameService {
     return { ...this.serializeUser(updatedUser), offlineBonus: offlineCoins, offlineOilBonus: offlineOil };
   }
 
+  // МЕТОД ДЛЯ СОХРАНЕНИЯ ОНЛАЙН ДОХОДА
   async sync(telegramId: number, earnedCoins: number, earnedOil: number) {
     const tid = BigInt(telegramId);
-    return this.serializeUser(await this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { telegramId: tid },
       data: { 
         coins: { increment: earnedCoins }, 
         oil: { increment: earnedOil }, 
         lastUpdate: new Date() 
       }
-    }));
+    });
+    return this.serializeUser(updated);
   }
 
   async click(telegramId: number) {
     const tid = BigInt(telegramId);
     const user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
     const multiplier = this.getMultiplier(user);
-    return this.serializeUser(await this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { telegramId: tid },
       data: { coins: { increment: user.clickPower * multiplier }, lastUpdate: new Date() }
-    }));
+    });
+    return this.serializeUser(updated);
   }
 
   async activateBoost(telegramId: number, hours: number) {
@@ -69,7 +66,8 @@ export class GameService {
     const user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
     const currentEnd = (user.boostUntil && user.boostUntil > new Date()) ? new Date(user.boostUntil).getTime() : new Date().getTime();
     const newEnd = new Date(currentEnd + hours * 60 * 60 * 1000);
-    return this.serializeUser(await this.prisma.user.update({ where: { telegramId: tid }, data: { boostUntil: newEnd } }));
+    const updated = await this.prisma.user.update({ where: { telegramId: tid }, data: { boostUntil: newEnd } });
+    return this.serializeUser(updated);
   }
 
   async upgrade(telegramId: number, type: string) {
@@ -92,13 +90,14 @@ export class GameService {
       updateData = { maxOilOfflineTime: { increment: 3600 } };
     }
 
-    const currency = isOil ? user.oil : user.coins;
-    if (currency < price) return null;
+    const currentBalance = isOil ? Number(user.oil) : Number(user.coins);
+    if (currentBalance < price) return null;
 
-    return this.serializeUser(await this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { telegramId: tid },
       data: { [isOil ? 'oil' : 'coins']: { decrement: price }, ...updateData, lastUpdate: new Date() }
-    }));
+    });
+    return this.serializeUser(updated);
   }
 
   private serializeUser(user: any) {
