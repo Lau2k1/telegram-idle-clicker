@@ -50,6 +50,21 @@ export class GameService {
     return this.serializeUser(updated);
   }
 
+  async getLeaderboard() {
+  const users = await this.prisma.user.findMany({
+    orderBy: { coins: 'desc' },
+    take: 50, // Берем топ-50 игроков
+    select: {
+      firstName: true,
+      coins: true,
+    },
+  });
+  return users.map(user => ({
+    ...user,
+    coins: Number(user.coins)
+  }));
+}
+
   async click(telegramId: number) {
     const tid = BigInt(telegramId);
     const user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
