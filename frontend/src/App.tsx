@@ -24,14 +24,15 @@ function App() {
   const unsyncedCoins = useRef(0);
   const unsyncedOil = useRef(0);
 
+  // 1. ИНИЦИАЛИЗАЦИЯ
   useEffect(() => {
     load();
   }, [load]);
 
+  // 2. ИГРОВОЙ ЦИКЛ
   useEffect(() => {
     const visualInterval = setInterval(() => {
       const state = useGameStore.getState();
-      // Множитель x2
       const multiplier = state.isBoostActive ? 2 : 1;
 
       const goldToAdd = state.incomePerSec * multiplier;
@@ -46,8 +47,10 @@ function App() {
 
     const syncInterval = setInterval(() => {
       const state = useGameStore.getState();
-      // Синхронизируем только если модалка закрыта
-      if (!state.showOfflineModal && (unsyncedCoins.current > 0 || unsyncedOil.current > 0)) {
+      if (
+        !state.showOfflineModal &&
+        (unsyncedCoins.current > 0 || unsyncedOil.current > 0)
+      ) {
         syncOnline(unsyncedCoins.current, unsyncedOil.current);
         unsyncedCoins.current = 0;
         unsyncedOil.current = 0;
@@ -58,7 +61,6 @@ function App() {
       clearInterval(visualInterval);
       clearInterval(syncInterval);
     };
-    // Добавляем зависимости, чтобы при активации буста интервал подхватил изменения
   }, [incomePerSec, oilPerSec, isBoostActive, addResources, syncOnline]);
 
   const renderPage = () => {
@@ -73,28 +75,22 @@ function App() {
     }
   };
 
-  // Вспомогательный компонент для отображения баланса с индикатором x2
-  const isBoost = useGameStore(s => s.isBoostActive);
-
   return (
     <div className="min-h-screen bg-[#0f111a] text-white select-none font-sans overflow-hidden flex flex-col">
       <OfflineModal />
 
       <header className="h-20 shrink-0 p-4 flex justify-between bg-black/40 backdrop-blur-md z-40 border-b border-white/5">
-        {/* ЗОЛОТО */}
         <div className="flex flex-col">
-          <span className="text-[10px] text-yellow-500/70 uppercase font-black tracking-widest flex items-center gap-1">
-            Золото {isBoost && <span className="text-[8px] bg-yellow-500 text-black px-1 rounded animate-pulse">x2</span>}
+          <span className="text-[10px] text-yellow-500/70 uppercase font-black tracking-widest">
+            Золото {isBoostActive && "x2"}
           </span>
           <div className="flex items-center gap-2">
             <span className="text-xl">💰</span>
-            <span className={`font-black text-xl tracking-tighter ${isBoost ? 'text-yellow-400' : ''}`}>
+            <span className="font-black text-xl tracking-tighter">
               {useGameStore((s) => Math.floor(s.coins).toLocaleString())}
             </span>
           </div>
         </div>
-
-        {/* ТОПЛИВО */}
         <div className="flex flex-col items-center px-2">
           <span className="text-[10px] text-orange-500/70 uppercase font-black tracking-widest leading-none mb-1">
             Fuel
@@ -106,14 +102,12 @@ function App() {
             <span className="text-sm">🚀</span>
           </div>
         </div>
-
-        {/* НЕФТЬ */}
         <div className="flex flex-col items-end">
-          <span className="text-[10px] text-blue-400/70 uppercase font-black tracking-widest flex items-center gap-1">
-            {isBoost && <span className="text-[8px] bg-blue-500 text-white px-1 rounded animate-pulse">x2</span>} Нефть
+          <span className="text-[10px] text-blue-400/70 uppercase font-black tracking-widest">
+            {isBoostActive && "x2"} Нефть
           </span>
           <div className="flex items-center gap-2">
-            <span className={`font-black text-xl tracking-tighter ${isBoost ? 'text-blue-400' : ''}`}>
+            <span className="font-black text-xl text-blue-400">
               {useGameStore((s) => Math.floor(s.oil).toLocaleString())}
             </span>
             <span className="text-xl">🛢️</span>
@@ -123,18 +117,18 @@ function App() {
 
       <main className="flex-1 overflow-y-auto pb-32">{renderPage()}</main>
 
-      {/* Меню управления */}
       <div className="fixed bottom-6 left-0 right-0 flex justify-center z-50 pointer-events-none">
         <button
           onClick={() => setIsMenuOpen(true)}
           className="pointer-events-auto flex flex-col items-center justify-center w-20 h-20 bg-blue-600 rounded-full border-4 border-[#1a1c2c] shadow-[0_10px_30px_rgba(37,99,235,0.6)] active:scale-95 transition-all"
         >
           <span className="text-2xl">🚀</span>
-          <span className="text-[10px] font-black uppercase tracking-widest">Меню</span>
+          <span className="text-[10px] font-black uppercase tracking-widest">
+            Меню
+          </span>
         </button>
       </div>
 
-      {/* Навигация */}
       {isMenuOpen && (
         <div className="fixed inset-0 bg-[#0f111a]/95 backdrop-blur-2xl z-[60] p-6 flex flex-col overflow-y-auto animate-in fade-in slide-in-from-bottom duration-300">
           <div className="flex justify-between items-center mb-10">

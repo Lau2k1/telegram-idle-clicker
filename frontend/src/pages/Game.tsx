@@ -6,20 +6,18 @@ const Game = () => {
   const [animations, setAnimations] = useState<{ id: number; x: number; y: number; value: number }[]>([]);
 
   const handlePlanetClick = (e: React.MouseEvent | React.TouchEvent) => {
-    // 1. Считаем реальное значение для анимации (с учетом буста)
+    // Расчет значения с бустом
     const multiplier = isBoostActive ? 2 : 1;
     const clickValue = clickPower * multiplier;
 
-    // 2. Вызываем логику начисления
     click();
 
-    // 3. Координаты клика
     const x = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     const y = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
 
     const id = Date.now();
     
-    // 4. Добавляем анимацию с корректным числом
+    // Добавляем анимацию с умноженным значением
     setAnimations(prev => [...prev, { id, x, y, value: clickValue }]);
 
     setTimeout(() => {
@@ -59,7 +57,6 @@ const Game = () => {
         <div className="flex items-center gap-3 bg-white/5 px-6 py-3 rounded-2xl border border-white/5">
           <span className="text-2xl">⚡</span>
           <span className="text-2xl font-black">
-            {/* Здесь тоже показываем умноженное значение в статистике */}
             {clickPower * (isBoostActive ? 2 : 1)}
           </span>
         </div>
