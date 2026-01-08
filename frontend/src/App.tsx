@@ -224,8 +224,8 @@ function App() {
               {[
                 { id: "shop", l: "Магазин", i: "🛒" },
                 { id: "leaderboard", l: "Топ", i: "🏆" },
-                { id: "stats", l: "Инфо", i: "📊" },
-                { id: "refinery", l: "Завод", i: "🏭" },
+                { id: "stats", l: "Статистика", i: "📊" },
+                { id: "refinery", l: "Переработка", i: "🏭" },
               ].map((item) => (
                 <button
                   key={item.id}
