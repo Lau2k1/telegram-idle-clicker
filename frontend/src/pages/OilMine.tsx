@@ -26,7 +26,7 @@ const OilMine: React.FC = () => {
         <div className="text-blue-500 animate-bounce">
           <div className="animate-bounce">
             <img
-              src="/src/ico/drill.png"
+              src="/src/ico/drill.ico"
               alt="Mine"
               className="w-40 h-40 object-contain"
             />
