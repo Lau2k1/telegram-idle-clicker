@@ -59,72 +59,72 @@ function App() {
     }
   };
 
+  const navItems = [
+    { id: 'planets', label: 'Главная', icon: '🌍' },
+    { id: 'oil', label: 'Добыча', icon: '🛢️' },
+    { id: 'refinery', label: 'Завод', icon: '🏭' },
+    { id: 'shop', label: 'Магазин', icon: '🛒' },
+    { id: 'leaderboard', label: 'Топ', icon: '🏆' },
+    { id: 'stats', label: 'Инфо', icon: '📊' },
+  ];
+
   return (
     <div className="min-h-screen bg-[#0f111a] text-white select-none font-sans overflow-hidden">
       <OfflineModal />
       
-      {/* Шапка */}
-      <div className="fixed top-0 left-0 right-0 p-4 flex justify-between bg-[#0f111a]/80 backdrop-blur-lg z-50 border-b border-white/5">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">💰</span>
-          <span className="font-black text-lg tracking-tight">
-            {useGameStore(s => Math.floor(s.coins).toLocaleString())}
-          </span>
+      {/* Верхняя панель (Header) */}
+      <div className="fixed top-0 left-0 right-0 p-4 flex justify-between bg-[#0f111a]/90 backdrop-blur-xl z-50 border-b border-white/5">
+        <div className="flex flex-col">
+          <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Баланс</span>
+          <div className="flex items-center gap-1">
+            <span className="text-yellow-500">💰</span>
+            <span className="font-black text-lg tracking-tighter">
+              {useGameStore(s => Math.floor(s.coins).toLocaleString())}
+            </span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xl">🛢️</span>
-          <span className="font-black text-lg text-blue-400">
-            {useGameStore(s => s.oil.toFixed(2))}
-          </span>
+        <div className="flex flex-col items-end">
+          <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Нефть</span>
+          <div className="flex items-center gap-1">
+            <span className="font-black text-lg text-blue-400">
+              {useGameStore(s => s.oil.toFixed(2))}
+            </span>
+            <span>🛢️</span>
+          </div>
         </div>
       </div>
 
-      <main className="pt-20 pb-28 h-screen overflow-y-auto">
+      {/* Основной контент */}
+      <main className="pt-24 pb-32 h-screen overflow-y-auto px-4">
         {renderPage()}
       </main>
 
-      {/* СТАРЕЕ УДОБНОЕ МЕНЮ */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-[#1a1c2c] border-t border-white/5 p-2 flex justify-around items-center z-50 pb-8">
-        <button 
-          onClick={() => setActivePage('planets')}
-          className={`flex flex-col items-center gap-1 transition-all ${activePage === 'planets' ? 'text-blue-400 scale-110' : 'text-slate-500'}`}
-        >
-          <span className="text-2xl">🌍</span>
-          <span className="text-[10px] font-bold uppercase tracking-widest">Игра</span>
-        </button>
+      {/* НОВОЕ МЕНЮ СНИЗУ (Scrollable Tabs) */}
+      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-black via-[#0f111a] to-transparent pt-10 pb-6 px-4 z-50">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActivePage(item.id)}
+              className={`flex items-center gap-3 px-6 py-3 rounded-2xl whitespace-nowrap transition-all duration-300 border ${
+                activePage === item.id 
+                ? 'bg-blue-600 border-blue-400 shadow-[0_0_15px_rgba(37,99,235,0.4)] scale-105' 
+                : 'bg-[#1a1c2c] border-white/5 text-slate-400'
+              }`}
+            >
+              <span className="text-xl">{item.icon}</span>
+              <span className={`text-sm font-bold ${activePage === item.id ? 'text-white' : 'text-slate-400'}`}>
+                {item.label}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
 
-        <button 
-          onClick={() => setActivePage('oil')}
-          className={`flex flex-col items-center gap-1 transition-all ${activePage === 'oil' ? 'text-blue-400 scale-110' : 'text-slate-500'}`}
-        >
-          <span className="text-2xl">🛢️</span>
-          <span className="text-[10px] font-bold uppercase tracking-widest">Шахта</span>
-        </button>
-
-        <button 
-          onClick={() => setActivePage('shop')}
-          className={`flex flex-col items-center gap-1 transition-all ${activePage === 'shop' ? 'text-blue-400 scale-110' : 'text-slate-500'}`}
-        >
-          <span className="text-2xl">🛒</span>
-          <span className="text-[10px] font-bold uppercase tracking-widest">Магазин</span>
-        </button>
-
-        <button 
-          onClick={() => setActivePage('leaderboard')}
-          className={`flex flex-col items-center gap-1 transition-all ${activePage === 'leaderboard' ? 'text-blue-400 scale-110' : 'text-slate-500'}`}
-        >
-          <span className="text-2xl">🏆</span>
-          <span className="text-[10px] font-bold uppercase tracking-widest">Топ</span>
-        </button>
-
-        <button 
-          onClick={() => setActivePage('stats')}
-          className={`flex flex-col items-center gap-1 transition-all ${activePage === 'stats' ? 'text-blue-400 scale-110' : 'text-slate-500'}`}
-        >
-          <span className="text-2xl">📊</span>
-          <span className="text-[10px] font-bold uppercase tracking-widest">Инфо</span>
-        </button>
-      </nav>
+      <style>{`
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
     </div>
   );
 }
