@@ -196,19 +196,17 @@ async startRefining(telegramId: number, type: string, amount: number) {
   return this.serializeUser(updated);
 }
   private serializeUser(user: any) {
-    return {
-      ...user,
-      telegramId: user.telegramId.toString(),
-      coins: Number(user.coins),
-      oil: Number(user.oil),
-       fuel: Number(user.fuel || 0),
-      clickPower: Number(user.clickPower),
-      incomePerSec: Number(user.incomePerSec),
-      oilPerSec: Number(user.oilPerSec),
-      maxOfflineTime: Number(user.maxOfflineTime),
-      maxOilOfflineTime: Number(user.maxOilOfflineTime),
-      boostUntil: user.boostUntil ? user.boostUntil.toISOString() : null,
-      isBoostActive: user.boostUntil && new Date(user.boostUntil) > new Date(),
-    };
-  }
+  return {
+    ...user,
+    telegramId: user.telegramId.toString(),
+    coins: Number(user.coins),
+    oil: Number(user.oil),
+    fuel: Number(user.fuel || 0),
+    incomePerSec: Number(user.incomePerSec),
+    oilPerSec: Number(user.oilPerSec),
+    clickPower: Number(user.clickPower),
+    refiningOilUntil: user.refiningOilUntil ? user.refiningOilUntil.toISOString() : null,
+    refiningFuelUntil: user.refiningFuelUntil ? user.refiningFuelUntil.toISOString() : null,
+    refiningAmount: user.refiningAmount || 0,
+  };
 }
