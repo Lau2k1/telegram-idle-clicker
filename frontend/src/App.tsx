@@ -3,9 +3,9 @@ import { useGameStore } from './store/gameStore';
 import Game from './pages/Game';
 import Shop from './pages/Shop';
 import OilMine from './pages/OilMine';
-import Refinery from './pages/Refinery'; // Добавлено
+import Refinery from './pages/Refinery';
 import Leaderboard from './pages/Leaderboard';
-import Stats from './pages/Stats'; // Добавлено
+import Stats from './pages/Stats';
 import OfflineModal from './components/OfflineModal';
 
 function App() {
@@ -32,7 +32,7 @@ function App() {
       }
     }, 100);
 
-    // Синхронизация накопленного с сервером раз в 10 секунд
+    // Синхронизация с сервером раз в 10 секунд
     const syncInterval = setInterval(() => {
       if (unsyncedCoins.current > 0 || unsyncedOil.current > 0) {
         syncOnline(unsyncedCoins.current, unsyncedOil.current);
@@ -52,18 +52,18 @@ function App() {
       case 'planets': return <Game />;
       case 'shop': return <Shop />;
       case 'oil': return <OilMine />;
-      case 'refinery': return <Refinery />; // Добавлено
+      case 'refinery': return <Refinery />;
       case 'leaderboard': return <Leaderboard />;
-      case 'stats': return <Stats />; // Добавлено
+      case 'stats': return <Stats />;
       default: return <Game />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#0f111a] text-white select-none font-sans">
+    <div className="min-h-screen bg-[#0f111a] text-white select-none font-sans overflow-hidden">
       <OfflineModal />
       
-      {/* Шапка с балансом */}
+      {/* Шапка */}
       <div className="fixed top-0 left-0 right-0 p-4 flex justify-between bg-[#0f111a]/80 backdrop-blur-lg z-50 border-b border-white/5">
         <div className="flex items-center gap-2">
           <span className="text-xl">💰</span>
@@ -79,17 +79,51 @@ function App() {
         </div>
       </div>
 
-      <main className="pt-20 pb-24">
+      <main className="pt-20 pb-28 h-screen overflow-y-auto">
         {renderPage()}
       </main>
 
-      {/* Навигация на основе вашего файла */}
-      <nav className="fixed bottom-6 left-6 right-6 bg-[#1a1c2c]/90 backdrop-blur-xl border border-white/10 rounded-[32px] p-2 flex justify-between items-center z-50 shadow-2xl">
-        <button onClick={() => setActivePage('planets')} className={`flex-1 py-4 rounded-2xl ${activePage === 'planets' ? 'bg-white/10 text-white' : 'text-slate-500'}`}>🌍</button>
-        <button onClick={() => setActivePage('oil')} className={`flex-1 py-4 rounded-2xl ${activePage === 'oil' ? 'bg-white/10 text-white' : 'text-slate-500'}`}>🛢️</button>
-        <button onClick={() => setActivePage('shop')} className={`flex-1 py-4 rounded-2xl ${activePage === 'shop' ? 'bg-white/10 text-white' : 'text-slate-500'}`}>🛒</button>
-        <button onClick={() => setActivePage('leaderboard')} className={`flex-1 py-4 rounded-2xl ${activePage === 'leaderboard' ? 'bg-white/10 text-white' : 'text-slate-500'}`}>🏆</button>
-        <button onClick={() => setActivePage('stats')} className={`flex-1 py-4 rounded-2xl ${activePage === 'stats' ? 'bg-white/10 text-white' : 'text-slate-500'}`}>📊</button>
+      {/* СТАРЕЕ УДОБНОЕ МЕНЮ */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-[#1a1c2c] border-t border-white/5 p-2 flex justify-around items-center z-50 pb-8">
+        <button 
+          onClick={() => setActivePage('planets')}
+          className={`flex flex-col items-center gap-1 transition-all ${activePage === 'planets' ? 'text-blue-400 scale-110' : 'text-slate-500'}`}
+        >
+          <span className="text-2xl">🌍</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest">Игра</span>
+        </button>
+
+        <button 
+          onClick={() => setActivePage('oil')}
+          className={`flex flex-col items-center gap-1 transition-all ${activePage === 'oil' ? 'text-blue-400 scale-110' : 'text-slate-500'}`}
+        >
+          <span className="text-2xl">🛢️</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest">Шахта</span>
+        </button>
+
+        <button 
+          onClick={() => setActivePage('shop')}
+          className={`flex flex-col items-center gap-1 transition-all ${activePage === 'shop' ? 'text-blue-400 scale-110' : 'text-slate-500'}`}
+        >
+          <span className="text-2xl">🛒</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest">Магазин</span>
+        </button>
+
+        <button 
+          onClick={() => setActivePage('leaderboard')}
+          className={`flex flex-col items-center gap-1 transition-all ${activePage === 'leaderboard' ? 'text-blue-400 scale-110' : 'text-slate-500'}`}
+        >
+          <span className="text-2xl">🏆</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest">Топ</span>
+        </button>
+
+        <button 
+          onClick={() => setActivePage('stats')}
+          className={`flex flex-col items-center gap-1 transition-all ${activePage === 'stats' ? 'text-blue-400 scale-110' : 'text-slate-500'}`}
+        >
+          <span className="text-2xl">📊</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest">Инфо</span>
+        </button>
       </nav>
     </div>
   );
