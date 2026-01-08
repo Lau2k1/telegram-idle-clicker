@@ -1,66 +1,57 @@
 import React, { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
+import './Game.css';
 
-const Game = () => {
-  const { clickPower, isBoostActive, click } = useGameStore();
-  const [animations, setAnimations] = useState<{ id: number; x: number; y: number; value: number }[]>([]);
+interface ClickEffect {
+  id: number;
+  x: number;
+  y: number;
+}
 
-  const handlePlanetClick = (e: React.MouseEvent | React.TouchEvent) => {
-    // ИСПРАВЛЕНИЕ: Рассчитываем значение с учетом буста для анимации
-    const multiplier = isBoostActive ? 2 : 1;
-    const clickValue = clickPower * multiplier;
+const Game: React.FC = () => {
+  const { coins, click, clickPower, incomePerSec } = useGameStore();
+  const [clicks, setClicks] = useState<ClickEffect[]>([]);
 
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const { clientX, clientY } = e;
     click();
 
-    const x = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-    const y = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-
     const id = Date.now();
-    
-    // ИСПРАВЛЕНИЕ: Передаем clickValue вместо clickPower
-    setAnimations(prev => [...prev, { id, x, y, value: clickValue }]);
-
+    setClicks((prev) => [...prev, { id, x: clientX, y: clientY }]);
     setTimeout(() => {
-      setAnimations(prev => prev.filter(anim => anim.id !== id));
-    }, 1000);
+      setClicks((prev) => prev.filter((c) => c.id !== id));
+    }, 800);
   };
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center p-4 overflow-hidden pt-12">
-      <div className="absolute inset-0 z-0">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px] animate-pulse" />
+    <div className="game-page">
+      <div className="balance-card">
+        <div className="balance-label">БАЛАНС</div>
+        <div className="balance-amount">
+          <span>💰</span>
+          {Math.floor(coins).toLocaleString()}
+        </div>
+        {/* НОВОЕ ПОЛЕ: Доход в секунду */}
+        <div className="text-green-400 text-sm font-bold mt-1 flex items-center justify-center gap-1">
+          <span className="animate-pulse">●</span>
+          Доход: +{incomePerSec}/сек
+        </div>
       </div>
 
-      {animations.map(anim => (
-        <span
-          key={anim.id}
-          style={{ left: anim.x, top: anim.y }}
-          className="fixed pointer-events-none font-black text-3xl text-white z-[100] animate-float-up"
-        >
-          +{anim.value}
-        </span>
-      ))}
-
-      <div className="relative z-10 group cursor-pointer" onClick={handlePlanetClick}>
-        <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-2xl group-hover:bg-blue-500/30 transition-all duration-500" />
-        <div className="relative transform active:scale-90 transition-transform duration-75 ease-out select-none">
-          <div className="text-[180px] drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-            ⛏️
+      <div className="click-zone" onPointerDown={handlePointerDown}>
+        <div className="miner-button">⛏️</div>
+        
+        {clicks.map((c) => (
+          <div key={c.id} className="floating-number" style={{ left: c.x - 20, top: c.y - 20 }}>
+            +{clickPower}
           </div>
-        </div>
+        ))}
       </div>
 
-      <div className="mt-12 text-center z-10">
-        <p className="text-slate-500 text-[10px] uppercase font-black tracking-[0.3em] mb-2">
-          Сила добычи
-        </p>
-        <div className="flex items-center gap-3 bg-white/5 px-6 py-3 rounded-2xl border border-white/5">
-          <span className="text-2xl">⚡</span>
-          <span className="text-2xl font-black">
-            {/* ИСПРАВЛЕНИЕ: Здесь тоже показываем актуальное число с бустом */}
-            {clickPower * (isBoostActive ? 2 : 1)}
-          </span>
-        </div>
+      <div className="bg-[#1a1c2c] px-6 py-3 rounded-2xl border border-slate-700 text-slate-400 flex gap-4">
+        <div>Клик: <span className="text-yellow-500 font-bold">{clickPower}</span></div>
+        <div className="w-px h-4 bg-slate-700 self-center"></div>
+        <div>Оффлайн: <span className="text-blue-400 font-bold">{useGameStore.getState().maxOfflineTime / 3600}ч</span></div>
       </div>
     </div>
   );
