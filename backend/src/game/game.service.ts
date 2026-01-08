@@ -155,6 +155,25 @@ async upgrade(telegramId: number, type: string) {
   return this.serializeUser(updated);
 }
 
+async startRefiningOil(telegramId: number) {
+  const tid = BigInt(telegramId);
+  const user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
+  
+  const OIL_COST = 25;
+  if (Number(user.oil) < OIL_COST) throw new Error("Недостаточно нефти");
+
+  // Время переработки в 10 раз дольше, чем у золота (например, 100 секунд)
+  const refiningTime = 100; 
+
+  return await this.prisma.user.update({
+    where: { telegramId: tid },
+    data: {
+      oil: { decrement: OIL_COST },
+      // Логика таймера (нужно добавить поля в БД для отслеживания процесса)
+    }
+  });
+}
+
   private serializeUser(user: any) {
     return {
       ...user,
