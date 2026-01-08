@@ -81,7 +81,7 @@ function App() {
       
       <header className="h-20 shrink-0 p-4 flex justify-between bg-black/40 backdrop-blur-md z-40 border-b border-white/5">
         <div className="flex flex-col">
-          <span className="text-[10px] text-yellow-500/70 uppercase font-black tracking-widest">Earth Resources</span>
+          <span className="text-[10px] text-yellow-500/70 uppercase font-black tracking-widest">Золото</span>
           <div className="flex items-center gap-2">
             <span className="text-xl">💰</span>
             <span className="font-black text-xl tracking-tighter">
@@ -90,7 +90,7 @@ function App() {
           </div>
         </div>
         <div className="flex flex-col items-end">
-          <span className="text-[10px] text-blue-400/70 uppercase font-black tracking-widest">Crude Oil</span>
+          <span className="text-[10px] text-blue-400/70 uppercase font-black tracking-widest">Нефть</span>
           <div className="flex items-center gap-2">
             <span className="font-black text-xl text-blue-400">
               {useGameStore(s => Math.floor(s.oil).toLocaleString())}
