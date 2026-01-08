@@ -1,87 +1,65 @@
 import { useEffect, useState, useRef } from 'react';
 import { useGameStore } from './store/gameStore';
+import PlanetSelection from './pages/PlanetSelection';
+import MineSelection from './pages/MineSelection';
 import Game from './pages/Game';
-import Shop from './pages/Shop';
-import Leaderboard from './pages/Leaderboard';
-import Stats from './pages/Stats';
-import OfflineModal from './components/OfflineModal';
+import OilMine from './pages/OilMine';
 import Refinery from './pages/Refinery';
+import Shop from './pages/Shop';
 import './App.css';
 
 function App() {
-  const { load, incomePerSec, addCoins, syncOnline, showOfflineModal, offlineBonus, closeOfflineModal } = useGameStore();
-  const [activePage, setActivePage] = useState('game');
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isReady, setIsReady] = useState(false);
-  
-  const earnedRef = useRef(0);
-  const isInitialMount = useRef(true);
+  const { load, incomePerSec, oilPerSec, addResources, syncOnline, showOfflineModal } = useGameStore();
+  const [activePage, setActivePage] = useState('planets');
+  const earnedCoins = useRef(0);
+  const earnedOil = useRef(0);
 
+  useEffect(() => { load(); }, []);
+
+  // Система тиков (Онлайн доход)
   useEffect(() => {
-    if (isInitialMount.current) {
-      load().finally(() => setIsReady(true));
-      isInitialMount.current = false;
-    }
-  }, [load]);
-
-  // СИСТЕМА ОНЛАЙН ДОХОДА
-  useEffect(() => {
-    if (!isReady || incomePerSec <= 0) return;
-
-    const tickInterval = setInterval(() => {
-      addCoins(incomePerSec);
-      earnedRef.current += incomePerSec;
+    const tick = setInterval(() => {
+      addResources(incomePerSec, oilPerSec);
+      earnedCoins.current += incomePerSec;
+      earnedOil.current += oilPerSec;
     }, 1000);
 
-    const syncInterval = setInterval(() => {
-      if (earnedRef.current > 0) {
-        syncOnline(earnedRef.current);
-        earnedRef.current = 0;
+    const sync = setInterval(() => {
+      if (earnedCoins.current > 0 || earnedOil.current > 0) {
+        syncOnline(earnedCoins.current, earnedOil.current);
+        earnedCoins.current = 0; earnedOil.current = 0;
       }
-    }, 30000); // Синхронизация каждые 30 секунд
+    }, 30000);
 
-    return () => {
-      clearInterval(tickInterval);
-      clearInterval(syncInterval);
-      // Синхронизация при закрытии/уходе
-      if (earnedRef.current > 0) syncOnline(earnedRef.current);
-    };
-  }, [isReady, incomePerSec, addCoins, syncOnline]);
-
-  const navigate = (p: string) => { setActivePage(p); setIsMenuOpen(false); };
-
-  if (!isReady) return <div className="h-screen bg-[#0a0c1a] flex items-center justify-center text-yellow-500 font-bold">ЗАГРУЗКА...⌛</div>;
+    return () => { clearInterval(tick); clearInterval(sync); };
+  }, [incomePerSec, oilPerSec]);
 
   return (
     <div className="app-container">
       <header className="app-header">
-        <button className="menu-toggle" onClick={() => setIsMenuOpen(true)}>
-          <span></span><span></span><span></span>
-        </button>
-        <h1 className="logo text-yellow-500">GOLD MINER</h1>
-        <div className="w-8"></div>
+        <button onClick={() => setActivePage('planets')} className="text-yellow-500 font-bold">🪐 ПЛАНЕТЫ</button>
+        <h1 className="logo">GOLD MINER</h1>
+        <button onClick={() => setActivePage('shop')} className="text-2xl">🛒</button>
       </header>
 
       <main className="main-content">
+        {activePage === 'planets' && <PlanetSelection onSelect={() => setActivePage('mines')} />}
+        {activePage === 'mines' && <MineSelection 
+            onSelectGold={() => setActivePage('game')} 
+            onSelectOil={() => setActivePage('oil-mine')} 
+            onBack={() => setActivePage('planets')}
+        />}
         {activePage === 'game' && <Game />}
-        {activePage === 'shop' && <Shop />}
+        {activePage === 'oil-mine' && <OilMine />}
         {activePage === 'refinery' && <Refinery />}
-        {activePage === 'leaders' && <Leaderboard />}
-        {activePage === 'stats' && <Stats />}
+        {activePage === 'shop' && <Shop />}
       </main>
 
-      <div className={`side-menu-overlay ${isMenuOpen ? 'open' : ''}`} onClick={() => setIsMenuOpen(false)}>
-        <div className="side-menu" onClick={e => e.stopPropagation()}>
-          <h2 className="text-yellow-500 font-black mb-6 text-xl">МЕНЮ</h2>
-          <button onClick={() => navigate('game')} className={`menu-item ${activePage === 'game' ? 'active' : ''}`}>⛏️ Майнинг</button>
-          <button onClick={() => navigate('shop')} className={`menu-item ${activePage === 'shop' ? 'active' : ''}`}>🛒 Магазин</button>
-          <button onClick={() => navigate('refinery')} className={`menu-item ${activePage === 'refinery' ? 'active' : ''}`}>🏭 Переработка</button>
-          <button onClick={() => navigate('leaders')} className={`menu-item ${activePage === 'leaders' ? 'active' : ''}`}>🏆 Лидеры</button>
-          <button onClick={() => navigate('stats')} className={`menu-item ${activePage === 'stats' ? 'active' : ''}`}>📊 Статистика</button>
-        </div>
-      </div>
-
-      {showOfflineModal && <OfflineModal amount={offlineBonus} onClose={closeOfflineModal} />}
+      <nav className="fixed bottom-0 w-full bg-[#1a1c2c] flex justify-around p-4 border-t border-slate-800">
+        <button onClick={() => setActivePage('planets')}>🌍 Миры</button>
+        <button onClick={() => setActivePage('refinery')}>🏭 Завод</button>
+        <button onClick={() => setActivePage('shop')}>🛒 Магазин</button>
+      </nav>
     </div>
   );
 }

@@ -12,10 +12,11 @@ model User {
   telegramId      BigInt   @unique
   firstName       String?  
   coins           Float    @default(0)
-  oil             Float    @default(0)      // Новая валюта: Нефть
-  processingUntil DateTime?                 // Время окончания переработки
+  oil             Float    @default(0)
   clickPower      Int      @default(1)
   incomePerSec    Int      @default(0)
+  oilPerSec       Float    @default(0)      // Доход нефти в секунду
   maxOfflineTime  Int      @default(3600) 
+  processingUntil DateTime?
   lastUpdate      DateTime @default(now())
 }
