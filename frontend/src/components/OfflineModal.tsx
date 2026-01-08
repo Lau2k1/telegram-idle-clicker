@@ -1,28 +1,33 @@
 import React from 'react';
-import './OfflineModal.css';
+import { useGameStore } from '../store/gameStore';
 
-interface OfflineModalProps {
-  amount: number;
-  onClose: () => void;
-}
+const OfflineModal: React.FC = () => {
+  const { showOfflineModal, offlineBonus, offlineOilBonus, closeOfflineModal } = useGameStore();
 
-const OfflineModal: React.FC<OfflineModalProps> = ({ amount, onClose }) => {
-  if (amount <= 0) return null;
+  if (!showOfflineModal) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-container">
-        <div className="modal-icon">⛏️</div>
-        <h2 className="modal-title">С возвращением!</h2>
-        <p className="modal-text">
-          Пока тебя не было, твои шахты работали на полную мощность:
-        </p>
-        <div className="modal-amount">
-          <span>+{amount}</span>
-          <span style={{ fontSize: '1.8rem' }}>💰</span>
+    <div className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-6 backdrop-blur-md">
+      <div className="bg-[#1a1c2c] w-full max-w-sm rounded-[40px] border border-slate-800 p-8 text-center shadow-2xl">
+        <h2 className="text-2xl font-black text-white mb-2 uppercase">С возвращением!</h2>
+        <p className="text-slate-400 text-sm mb-8">Вот что добыли ваши шахты, пока вас не было:</p>
+        
+        <div className="space-y-4 mb-10">
+          <div className="bg-yellow-500/10 p-4 rounded-3xl border border-yellow-500/20">
+            <div className="text-yellow-500 text-xs font-bold uppercase mb-1">Золото</div>
+            <div className="text-3xl font-black text-white">+{Math.floor(offlineBonus).toLocaleString()} 💰</div>
+          </div>
+          <div className="bg-blue-500/10 p-4 rounded-3xl border border-blue-500/20">
+            <div className="text-blue-500 text-xs font-bold uppercase mb-1">Нефть</div>
+            <div className="text-3xl font-black text-white">+{offlineOilBonus.toFixed(2)} 🛢️</div>
+          </div>
         </div>
-        <button className="modal-button" onClick={onClose}>
-          ЗАБРАТЬ МОНЕТЫ
+
+        <button 
+          onClick={closeOfflineModal}
+          className="w-full bg-white text-black py-5 rounded-3xl font-black text-lg active:scale-95 transition-all"
+        >
+          ЗАБРАТЬ РЕСУРСЫ
         </button>
       </div>
     </div>

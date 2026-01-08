@@ -1,81 +1,47 @@
-import React from "react";
-import { useGameStore } from "../store/gameStore";
+import React from 'react';
+import { useGameStore } from '../store/gameStore';
 
 const Shop: React.FC = () => {
-  const { coins, clickPower, incomePerSec, maxOfflineTime, oilPerSec, buyUpgrade } =
-    useGameStore();
+  const { coins, oil, clickPower, incomePerSec, oilPerSec, maxOfflineTime, maxOilOfflineTime, buyUpgrade } = useGameStore();
 
   const upgrades = [
-    {
-      id: "click",
-      name: "Мощный Клик",
-      desc: "+1 к силе нажатия",
-      price: Math.floor(50 * Math.pow(1.5, clickPower - 1)),
-      icon: "⚡",
-    },
-    {
-      id: "income",
-      name: "Бригада",
-      desc: "+5 монеток в секунду",
-      price: Math.floor(100 * Math.pow(1.3, Math.floor(incomePerSec / 5))),
-      icon: "👷",
-    },
-    {
-      id: "limit",
-      name: "Хранилище",
-      desc: "+1 час к лимиту оффлайна",
-      price: Math.floor(500 * Math.pow(2, maxOfflineTime / 3600 - 1)),
-      icon: "📦",
-    },
-    {
-      id: "oilIncome",
-      name: "Нефтяной насос",
-      desc: "+0.1 нефти/сек",
-      price: Math.floor(50000 * Math.pow(1.8, oilPerSec * 10)),
-      icon: "⛽",
-    },
+    { id: 'click', name: 'Мощная кирка', desc: '+1 к клику', price: Math.floor(50 * Math.pow(1.5, clickPower - 1)), curr: 'gold', icon: '⛏️' },
+    { id: 'income', name: 'Шахтер', desc: '+5 золота/сек', price: Math.floor(100 * Math.pow(1.3, Math.floor(incomePerSec / 5))), curr: 'gold', icon: '👷' },
+    { id: 'limit', name: 'Склад золота', desc: '+1 час хранения', price: Math.floor(500 * Math.pow(2, (maxOfflineTime / 3600) - 1)), curr: 'gold', icon: '📦' },
+    { id: 'oilIncome', name: 'Насос', desc: '+0.1 нефти/сек', price: Math.floor(50000 * Math.pow(1.8, oilPerSec * 10)), curr: 'gold', icon: '⛽' },
+    { id: 'oilLimit', name: 'Резервуар', desc: '+1 час оффлайна', price: Math.floor(10 * Math.pow(2, (maxOilOfflineTime / 3600) - 1)), curr: 'oil', icon: '🛢️' },
   ];
 
   return (
-    <div className="p-4 space-y-4">
-      <h2 className="text-2xl font-black text-yellow-500 text-center mb-6">
-        МАГАЗИН
-      </h2>
-      <div className="bg-yellow-500/10 border border-yellow-500/20 p-3 rounded-2xl mb-4 text-center">
-        <span className="text-yellow-500 font-bold">
-          Ваш баланс: {Math.floor(coins).toLocaleString()} 💰
-        </span>
-      </div>
-
-      {upgrades.map((u) => (
-        <div
-          key={u.id}
-          className="bg-[#1a1c2c] border border-slate-700 p-4 rounded-3xl flex justify-between items-center transition-all active:scale-[0.98]"
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-3xl bg-[#24273d] w-12 h-12 flex items-center justify-center rounded-2xl">
-              {u.icon}
-            </span>
-            <div>
-              <div className="font-bold text-white leading-tight">{u.name}</div>
-              <div className="text-[10px] text-slate-400 uppercase tracking-wider">
-                {u.desc}
+    <div className="p-6 pb-24 space-y-4">
+      <h2 className="text-2xl font-black text-center text-white mb-6 uppercase">Магазин Улучшений</h2>
+      
+      {upgrades.map(up => {
+        const canAfford = up.curr === 'gold' ? coins >= up.price : oil >= up.price;
+        return (
+          <div key={up.id} className="bg-[#1a1c2c] p-5 rounded-[32px] border border-slate-800 flex justify-between items-center transition-all active:scale-[0.98]">
+            <div className="flex items-center gap-4">
+              <div className="text-4xl bg-slate-800 w-16 h-16 rounded-2xl flex items-center justify-center">{up.icon}</div>
+              <div>
+                <div className="font-bold text-white text-lg">{up.name}</div>
+                <div className="text-slate-400 text-xs mb-1">{up.desc}</div>
+                <div className={`font-black ${up.curr === 'gold' ? 'text-yellow-500' : 'text-blue-400'}`}>
+                  {up.price.toLocaleString()} {up.curr === 'gold' ? '💰' : '🛢️'}
+                </div>
               </div>
             </div>
+            <button 
+              onClick={() => buyUpgrade(up.id)}
+              disabled={!canAfford}
+              className={`px-6 py-3 rounded-2xl font-black text-sm uppercase transition-all ${
+                canAfford ? 'bg-white text-black' : 'bg-slate-800 text-slate-600'
+              }`}
+            >
+              Купить
+            </button>
           </div>
-          <button
-            onClick={() => buyUpgrade(u.id as any)}
-            disabled={coins < u.price}
-            className={`px-5 py-2 rounded-xl font-black text-sm shadow-lg ${
-              coins >= u.price
-                ? "bg-yellow-500 text-black shadow-yellow-500/20"
-                : "bg-slate-800 text-slate-500"
-            }`}
-          >
-            {u.price.toLocaleString()} 💰
-          </button>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

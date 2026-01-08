@@ -18,27 +18,30 @@ export class GameService {
 
       const now = new Date();
       const lastUpdate = new Date(user.lastUpdate);
-      let secondsOffline = Math.floor((now.getTime() - lastUpdate.getTime()) / 1000);
-      if (secondsOffline > user.maxOfflineTime) secondsOffline = user.maxOfflineTime;
+      const totalSecondsOffline = Math.floor((now.getTime() - lastUpdate.getTime()) / 1000);
 
-      let updateData: any = { lastUpdate: now };
       let offlineCoins = 0;
       let offlineOil = 0;
 
-      if (secondsOffline >= 10) {
-        offlineCoins = secondsOffline * user.incomePerSec;
-        offlineOil = secondsOffline * user.oilPerSec;
-        updateData.coins = { increment: offlineCoins };
-        updateData.oil = { increment: offlineOil };
-      }
+      if (totalSecondsOffline >= 10) {
+        // Золото: лимит по maxOfflineTime
+        const goldSeconds = Math.min(totalSecondsOffline, user.maxOfflineTime);
+        offlineCoins = goldSeconds * user.incomePerSec;
 
-      if (user.processingUntil && now >= new Date(user.processingUntil)) {
-        updateData.processingUntil = null;
+        // Нефть: лимит по maxOilOfflineTime
+        const oilSeconds = Math.min(totalSecondsOffline, user.maxOilOfflineTime);
+        offlineOil = oilSeconds * user.oilPerSec;
       }
 
       const updatedUser = await this.prisma.user.update({
         where: { telegramId: tid },
-        data: updateData,
+        data: {
+          coins: { increment: offlineCoins },
+          oil: { increment: offlineOil },
+          lastUpdate: now,
+          // Очистка таймера завода, если время вышло
+          processingUntil: user.processingUntil && now > new Date(user.processingUntil) ? null : user.processingUntil
+        },
       });
 
       return { 
@@ -49,27 +52,14 @@ export class GameService {
     } catch (error) { console.error(error); throw error; }
   }
 
-  // Метод, который требовал контроллер (syncCoins переименован в syncResources для поддержки нефти)
-  async syncResources(telegramId: number, earnedCoins: number, earnedOil: number) {
-    const tid = BigInt(telegramId);
-    const updated = await this.prisma.user.update({
-      where: { telegramId: tid },
-      data: { 
-        coins: { increment: earnedCoins },
-        oil: { increment: earnedOil },
-        lastUpdate: new Date() 
-      },
-    });
-    return this.serializeUser(updated);
-  }
-
-  async upgrade(telegramId: number, type: 'click' | 'income' | 'limit' | 'oilIncome') {
+  async upgrade(telegramId: number, type: string) {
     const tid = BigInt(telegramId);
     const user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
     if (!user) return null;
 
+    let updateData: any = {};
     let price = 0;
-    let updateData = {};
+    let isOilPurchase = false;
 
     if (type === 'click') {
       price = Math.floor(50 * Math.pow(1.5, user.clickPower - 1));
@@ -83,21 +73,48 @@ export class GameService {
     } else if (type === 'oilIncome') {
       price = Math.floor(50000 * Math.pow(1.8, user.oilPerSec * 10));
       updateData = { oilPerSec: { increment: 0.1 } };
+    } else if (type === 'oilLimit') {
+      // Улучшение резервуара покупается за НЕФТЬ
+      isOilPurchase = true;
+      price = Math.floor(10 * Math.pow(2, (user.maxOilOfflineTime / 3600) - 1));
+      updateData = { maxOilOfflineTime: { increment: 3600 } };
     }
 
-    if (user.coins >= price) {
-      return this.serializeUser(await this.prisma.user.update({
+    if (!isOilPurchase && user.coins >= price) {
+      const updated = await this.prisma.user.update({
         where: { telegramId: tid },
-        data: { coins: { decrement: price }, ...updateData, lastUpdate: new Date() },
-      }));
+        data: { coins: { decrement: price }, ...updateData, lastUpdate: new Date() }
+      });
+      return this.serializeUser(updated);
+    } 
+    
+    if (isOilPurchase && user.oil >= price) {
+      const updated = await this.prisma.user.update({
+        where: { telegramId: tid },
+        data: { oil: { decrement: price }, ...updateData, lastUpdate: new Date() }
+      });
+      return this.serializeUser(updated);
     }
+
     return null;
+  }
+
+  async syncResources(telegramId: number, earnedCoins: number, earnedOil: number) {
+    const tid = BigInt(telegramId);
+    const updated = await this.prisma.user.update({
+      where: { telegramId: tid },
+      data: { 
+        coins: { increment: earnedCoins },
+        oil: { increment: earnedOil },
+        lastUpdate: new Date() 
+      },
+    });
+    return this.serializeUser(updated);
   }
 
   async click(telegramId: number) {
     const tid = BigInt(telegramId);
     const user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
-    if (!user) return null;
     return this.serializeUser(await this.prisma.user.update({
       where: { telegramId: tid },
       data: { coins: { increment: user.clickPower }, lastUpdate: new Date() }
@@ -109,7 +126,6 @@ export class GameService {
     const user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
     const cost = amount * 10000;
     if (!user || user.coins < cost || user.processingUntil) return null;
-
     return this.serializeUser(await this.prisma.user.update({
       where: { telegramId: tid },
       data: {
@@ -121,11 +137,8 @@ export class GameService {
   }
 
   async getLeaderboard() {
-    const topUsers = await this.prisma.user.findMany({
-      orderBy: { coins: 'desc' },
-      take: 10,
-    });
-    return topUsers.map(user => this.serializeUser(user));
+    const users = await this.prisma.user.findMany({ orderBy: { coins: 'desc' }, take: 10 });
+    return users.map(u => this.serializeUser(u));
   }
 
   private serializeUser(user: any) {
@@ -136,6 +149,7 @@ export class GameService {
       oil: Number(user.oil),
       oilPerSec: Number(user.oilPerSec),
       maxOfflineTime: Number(user.maxOfflineTime),
+      maxOilOfflineTime: Number(user.maxOilOfflineTime),
       processingUntil: user.processingUntil ? user.processingUntil.toISOString() : null,
     };
   }

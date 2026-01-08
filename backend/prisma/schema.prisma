@@ -8,15 +8,16 @@ datasource db {
 }
 
 model User {
-  id              Int      @id @default(autoincrement())
-  telegramId      BigInt   @unique
-  firstName       String?  
-  coins           Float    @default(0)
-  oil             Float    @default(0)
-  clickPower      Int      @default(1)
-  incomePerSec    Int      @default(0)
-  oilPerSec       Float    @default(0)      // Доход нефти в секунду
-  maxOfflineTime  Int      @default(3600) 
-  processingUntil DateTime?
-  lastUpdate      DateTime @default(now())
+  id                Int       @id @default(autoincrement())
+  telegramId        BigInt    @unique
+  firstName         String?
+  coins             Float     @default(0)
+  oil               Float     @default(0)
+  clickPower        Int       @default(1)
+  incomePerSec      Int       @default(0)
+  oilPerSec         Float     @default(0)
+  maxOfflineTime    Int       @default(3600) // Лимит золота
+  maxOilOfflineTime Int       @default(3600) // Лимит нефти
+  processingUntil   DateTime?
+  lastUpdate        DateTime  @default(now())
 }
