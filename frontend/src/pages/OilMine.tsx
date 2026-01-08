@@ -22,19 +22,12 @@ const OilMine: React.FC = () => {
       </div>
 
       {/* Центральная иконка с анимацией */}
-      <div className="my-16 relative">
-        <div className="text-blue-500 animate-bounce">
-          <div className="animate-bounce">
-            <img
-              src="/src/ico/drill.ico"
-              alt="Mine"
-              className="w-40 h-40 object-contain"
-            />
-          </div>
-        </div>
-
-        {/* Тень под иконкой */}
-        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-32 h-4 bg-black/40 blur-md rounded-full"></div>
+      <div className="my-16 relative animate-bounce">
+        <img
+          src="/drill.png"
+          alt="Моя шахта"
+          className="w-40 h-40 object-contain"
+        />
       </div>
 
       {/* Инфо-блок */}
