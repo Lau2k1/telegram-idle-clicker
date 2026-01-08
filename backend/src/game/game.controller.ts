@@ -4,7 +4,7 @@ import { GameService } from "./game.service";
 @Controller("game")
 export class GameController {
   private readonly BOT_TOKEN =
-    "В8465844685:AAGnZ7rVhxpbrBiR2zW6abi7judVlyAt-oY";
+    "8465844685:AAGnZ7rVhxpbrBiR2zW6abi7judVlyAt-oY";
 
   constructor(private readonly gameService: GameService) {}
 
