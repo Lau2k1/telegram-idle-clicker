@@ -3,8 +3,7 @@ import { GameService } from "./game.service";
 
 @Controller("game")
 export class GameController {
-  private readonly BOT_TOKEN =
-    "8465844685:AAGnZ7rVhxpbrBiR2zW6abi7judVlyAt-oY";
+  private readonly BOT_TOKEN = "8465844685:AAGnZ7rVhxpbrBiR2zW6abi7judVlyAt-oY";
 
   constructor(private readonly gameService: GameService) {}
 
@@ -36,35 +35,38 @@ export class GameController {
     return this.gameService.upgrade(Number(userId), type);
   }
 
-@Post('create-boost-invoice')
-async createInvoice(@Query('userId') userId: string) {
-  try {
-    const response = await fetch(`https://api.telegram.org/bot${this.BOT_TOKEN}/createInvoiceLink`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: "Буст x2 (24ч)",
-        description: "Удвоение добычи ресурсов и силы клика",
-        payload: `boost_24h_${userId}`,
-        provider_token: "", // Для Telegram Stars это поле должно быть ПУСТЫМ
-        currency: "XTR",     // Код валюты для Telegram Stars
-        prices: [{ label: "Ускоритель", amount: 50 }] // Цена в Звездах
-      })
-    });
+  @Post("create-boost-invoice")
+  async createInvoice(@Query("userId") userId: string) {
+    try {
+      const response = await fetch(
+        `https://api.telegram.org/bot${this.BOT_TOKEN}/createInvoiceLink`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: "Буст x2 (24ч)",
+            description: "Удвоение добычи ресурсов и силы клика",
+            payload: `boost_24h_${userId}`,
+            provider_token: "", // Для Telegram Stars это поле должно быть ПУСТЫМ
+            currency: "XTR", // Код валюты для Telegram Stars
+            prices: [{ label: "Ускоритель", amount: 50 }], // Цена в Звездах
+          }),
+        }
+      );
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (!data.ok) {
-      console.error("Ошибка Telegram API:", data);
-      return { error: data.description || "Ошибка API" };
+      if (!data.ok) {
+        console.error("Ошибка Telegram API:", data);
+        return { error: data.description || "Ошибка API" };
+      }
+
+      return { invoiceLink: data.result };
+    } catch (e) {
+      console.error("Ошибка сервера при создании счета:", e);
+      return { error: "Internal Server Error" };
     }
-
-    return { invoiceLink: data.result };
-  } catch (e) {
-    console.error("Ошибка сервера при создании счета:", e);
-    return { error: "Internal Server Error" };
   }
-}
 
   @Post("activate-boost")
   activateBoost(@Query("userId") userId: string) {
@@ -74,5 +76,18 @@ async createInvoice(@Query('userId') userId: string) {
   @Get("leaderboard")
   getLeaderboard() {
     return this.gameService.getLeaderboard();
+  }
+
+  @Post("start-refining")
+  async startRefining(
+    @Query("userId") userId: string,
+    @Query("type") type: string,
+    @Query("amount") amount: string
+  ) {
+    return this.gameService.startRefining(
+      Number(userId),
+      type,
+      parseInt(amount)
+    );
   }
 }

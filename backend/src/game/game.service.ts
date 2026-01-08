@@ -10,40 +10,36 @@ export class GameService {
     return 1;
   }
 
-  async getState(telegramId: number, firstName?: string) {
+async getState(telegramId: number, firstName?: string) {
   const tid = BigInt(telegramId);
   let user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
   if (!user) user = await this.prisma.user.create({ data: { telegramId: tid, firstName: firstName || "Аноним" } });
 
   const now = new Date();
-  const lastUpdate = new Date(user.lastUpdate);
-  const totalSecondsOffline = Math.floor((now.getTime() - lastUpdate.getTime()) / 1000);
-  const multiplier = this.getMultiplier(user);
+  let needsUpdate = false;
+  let updateData: any = {};
 
-  let offlineCoins = 0;
-  let offlineOil = 0;
-
-  // Если игрока не было больше 10 секунд
-  if (totalSecondsOffline >= 10) {
-    offlineCoins = Math.min(totalSecondsOffline, user.maxOfflineTime) * user.incomePerSec * multiplier;
-    offlineOil = Math.min(totalSecondsOffline, user.maxOilOfflineTime) * user.oilPerSec;
+  // Проверка завершения переработки Золото -> Нефть
+  if (user.refiningOilUntil && user.refiningOilUntil <= now) {
+    updateData.oil = { increment: user.refiningAmount };
+    updateData.refiningOilUntil = null;
+    updateData.refiningAmount = 0;
+    needsUpdate = true;
   }
 
-  const updatedUser = await this.prisma.user.update({
-    where: { telegramId: tid },
-    data: { 
-      coins: { increment: offlineCoins }, 
-      oil: { increment: offlineOil }, 
-      lastUpdate: now 
-    },
-  });
+  // Проверка завершения переработки Нефть -> Топливо
+  if (user.refiningFuelUntil && user.refiningFuelUntil <= now) {
+    updateData.fuel = { increment: user.refiningAmount };
+    updateData.refiningFuelUntil = null;
+    updateData.refiningAmount = 0;
+    needsUpdate = true;
+  }
 
-  return { 
-    ...this.serializeUser(updatedUser), 
-    offlineBonus: offlineCoins, 
-    offlineOilBonus: offlineOil,
-    offlineSeconds: totalSecondsOffline // Передаем время для модалки
-  };
+  if (needsUpdate) {
+    user = await this.prisma.user.update({ where: { telegramId: tid }, data: updateData });
+  }
+
+  return this.serializeUser(user); // Не забудь добавить fuel в serializeUser
 }
 
   // МЕТОД ДЛЯ СОХРАНЕНИЯ ОНЛАЙН ДОХОДА
@@ -155,45 +151,38 @@ async upgrade(telegramId: number, type: string) {
   return this.serializeUser(updated);
 }
 
-async startRefining(telegramId: number, type: 'oil' | 'fuel', amount: number) {
+async startRefining(telegramId: number, type: string, amount: number) {
   const tid = BigInt(telegramId);
   const user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
-  if (!user) return null;
+  if (!user) throw new Error("User not found");
 
   const now = new Date();
-  
-  // Проверяем, не занят ли завод
-  if (type === 'oil' && user.refiningOilUntil && user.refiningOilUntil > now) throw new Error("Завод уже перерабатывает золото");
-  if (type === 'fuel' && user.refiningFuelUntil && user.refiningFuelUntil > now) throw new Error("Реактор уже перерабатывает нефть");
-
   let cost = 0;
   let duration = 0;
-  let updateField = {};
+  let data: any = {};
 
   if (type === 'oil') {
-    cost = amount * 100; // 100 золота за 1 нефть
+    cost = amount * 100;
     if (Number(user.coins) < cost) throw new Error("Недостаточно золота");
-    duration = amount * 10; // 10 секунд на единицу
-    updateField = { 
+    duration = amount * 10; // 10 сек на единицу
+    data = {
       coins: { decrement: cost },
       refiningOilUntil: new Date(now.getTime() + duration * 1000),
-      refiningAmount: amount 
+      refiningAmount: amount
     };
-  } else {
-    cost = amount * 25; // 25 нефти за 1 топливо
+  } else if (type === 'fuel') {
+    cost = amount * 25;
     if (Number(user.oil) < cost) throw new Error("Недостаточно нефти");
-    duration = amount * 100; // 100 секунд на единицу
-    updateField = { 
+    duration = amount * 100; // 100 сек на единицу
+    data = {
       oil: { decrement: cost },
       refiningFuelUntil: new Date(now.getTime() + duration * 1000),
-      refiningAmount: amount 
+      refiningAmount: amount
     };
   }
 
-  return await this.prisma.user.update({
-    where: { telegramId: tid },
-    data: updateField
-  });
+  const updated = await this.prisma.user.update({ where: { telegramId: tid }, data });
+  return this.serializeUser(updated);
 }
   private serializeUser(user: any) {
     return {
