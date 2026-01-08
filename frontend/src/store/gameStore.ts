@@ -1,19 +1,35 @@
 import { create } from "zustand";
 
 interface GameState {
+  // Базовые ресурсы
   coins: number;
   oil: number;
+  fuel: number;
+  
+  // Характеристики
   clickPower: number;
   incomePerSec: number;
   oilPerSec: number;
   maxOfflineTime: number;
   maxOilOfflineTime: number;
+  
+  // Бусты
   isBoostActive: boolean;
   boostUntil: string | null;
+  
+  // Офлайн доход
   offlineBonus: number;
   offlineOilBonus: number;
   offlineSeconds: number;
   showOfflineModal: boolean;
+
+  // Очередь переработки
+  refiningOilUntil: string | null;
+  refiningFuelUntil: string | null;
+  refiningOilAmount: number;
+  refiningFuelAmount: number;
+
+  // Методы
   load: () => Promise<void>;
   addResources: (c: number, o: number) => void;
   click: () => Promise<void>;
@@ -26,6 +42,7 @@ interface GameState {
 export const useGameStore = create<GameState>((set, get) => ({
   coins: 0,
   oil: 0,
+  fuel: 0,
   clickPower: 1,
   incomePerSec: 0,
   oilPerSec: 0,
@@ -37,139 +54,103 @@ export const useGameStore = create<GameState>((set, get) => ({
   offlineOilBonus: 0,
   offlineSeconds: 0,
   showOfflineModal: false,
+  refiningOilUntil: null,
+  refiningFuelUntil: null,
+  refiningOilAmount: 0,
+  refiningFuelAmount: 0,
 
-  addResources: (c, o) =>
-    set((s) => ({
-      coins: Number((s.coins + c).toFixed(4)),
-      oil: Number((s.oil + o).toFixed(4)),
-    })),
+  // Локальное начисление (для тиков в App.tsx)
+  addResources: (c, o) => set(s => ({ 
+    coins: Number((s.coins + c).toFixed(4)), 
+    oil: Number((s.oil + o).toFixed(4)) 
+  })),
 
+  // Загрузка состояния
   load: async () => {
-    const userId =
-      (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id || 12345;
+    const userId = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id || 12345;
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/game/state?userId=${userId}`
-      );
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/game/state?userId=${userId}`);
       const data = await res.json();
-
-      set({
+      
+      set((state) => ({
         ...data,
-        // Показываем, если бонусы больше нуля
-        showOfflineModal: data.offlineBonus > 0 || data.offlineOilBonus > 0,
-      });
+        // Окно открывается, если есть бонусы, и НЕ закрывается само при обновлениях
+        showOfflineModal: state.showOfflineModal || (data.offlineBonus > 0 || data.offlineOilBonus > 0)
+      }));
     } catch (e) {
-      console.error("Load error", e);
+      console.error("Ошибка загрузки данных игрока", e);
     }
   },
 
-  syncOnline: async (c, o) => {
-    const userId =
-      (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id || 12345;
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/game/sync?userId=${userId}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ earnedCoins: c, earnedOil: o }),
-        }
-      );
-      const data = await res.json();
-
-      if (data) {
-        // ВАЖНО: При синхронизации мы НЕ обновляем флаг showOfflineModal,
-        // чтобы окно не закрылось само по себе.
-        set({
-          coins: data.coins,
-          oil: data.oil,
-          isBoostActive: data.isBoostActive,
-          boostUntil: data.boostUntil,
-        });
-      }
-    } catch (e) {
-      console.warn("Sync error");
-    }
-  },
-
+  // Клик по планете
   click: async () => {
     const { coins, clickPower, isBoostActive } = get();
     const multiplier = isBoostActive ? 2 : 1;
     const addedValue = clickPower * multiplier;
-
+    
     set({ coins: coins + addedValue });
-
-    const userId =
-      (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id || 12345;
-    fetch(`${import.meta.env.VITE_API_URL}/game/click?userId=${userId}`, {
-      method: "POST",
-    });
+    
+    const userId = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id || 12345;
+    fetch(`${import.meta.env.VITE_API_URL}/game/click?userId=${userId}`, { method: 'POST' });
   },
 
-  buyUpgrade: async (type) => {
-    const userId =
-      (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id || 12345;
-    const tg = (window as any).Telegram?.WebApp;
+  // Синхронизация с сервером
+  syncOnline: async (earnedCoins, earnedOil) => {
+    const userId = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id || 12345;
     try {
-      const res = await fetch(
-        `${
-          import.meta.env.VITE_API_URL
-        }/game/upgrade?userId=${userId}&type=${type}`,
-        { method: "POST" }
-      );
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/game/sync?userId=${userId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ earnedCoins, earnedOil })
+      });
       const data = await res.json();
-
-      if (data && !data.error) {
-        set({ ...data });
-      } else {
-        tg?.showAlert(data.message || "Недостаточно средств!");
+      
+      if (data) {
+        set((state) => ({ 
+          ...data,
+          // Блокируем изменение видимости модалки при синхронизации
+          showOfflineModal: state.showOfflineModal 
+        }));
       }
     } catch (e) {
-      tg?.showAlert("Ошибка при покупке");
+      console.warn("Ошибка синхронизации");
     }
   },
 
+  // Покупка улучшений
+  buyUpgrade: async (type) => {
+    const userId = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id || 12345;
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/game/upgrade?userId=${userId}&type=${type}`, { method: 'POST' });
+    const data = await res.json();
+    if (data && !data.error) set({ ...data });
+  },
+
+  // Покупка буста за Звезды
   buyBoost: async () => {
-    const userId =
-      (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id || 12345;
+    const userId = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id || 12345;
     const tg = (window as any).Telegram?.WebApp;
-    try {
-      const res = await fetch(
-        `${
-          import.meta.env.VITE_API_URL
-        }/game/create-boost-invoice?userId=${userId}`,
-        { method: "POST" }
-      );
-      const { invoiceLink, error } = await res.json();
-
-      if (error || !invoiceLink) {
-        tg?.showAlert("Ошибка: " + (error || "Бот не настроен для платежей"));
-        return;
-      }
-
+    
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/game/create-boost-invoice?userId=${userId}`, { method: 'POST' });
+    const { invoiceLink } = await res.json();
+    
+    if (invoiceLink) {
       tg.openInvoice(invoiceLink, async (status: string) => {
-        if (status === "paid" || status === "pending") {
-          const actRes = await fetch(
-            `${
-              import.meta.env.VITE_API_URL
-            }/game/activate-boost?userId=${userId}`,
-            { method: "POST" }
-          );
+        if (status === 'paid' || status === 'pending') {
+          const actRes = await fetch(`${import.meta.env.VITE_API_URL}/game/activate-boost?userId=${userId}`, { method: 'POST' });
           const newData = await actRes.json();
           set({ ...newData });
-          tg.showAlert("Буст x2 активирован на 24 часа!");
         }
       });
-    } catch (e) {
-      tg?.showAlert("Ошибка связи с сервером");
     }
   },
 
-  closeOfflineModal: () =>
-    set({
-      showOfflineModal: false,
-      offlineBonus: 0,
+  // Закрытие модального окна (только вручную)
+  closeOfflineModal: () => {
+    set({ 
+      showOfflineModal: false, 
+      offlineBonus: 0, 
       offlineOilBonus: 0,
-      offlineSeconds: 0,
-    }),
+      offlineSeconds: 0 
+    });
+  }
 }));
