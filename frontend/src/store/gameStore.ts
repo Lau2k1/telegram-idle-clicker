@@ -13,9 +13,12 @@ interface GameState {
   offlineBonus: number;
   showOfflineModal: boolean;
   leaderboard: any[];
+  
   load: () => Promise<void>;
   click: () => Promise<void>;
   buyUpgrade: (type: 'click' | 'income' | 'limit') => Promise<void>;
+  syncOnline: (earned: number) => Promise<void>;
+  addCoins: (amount: number) => void;
   loadLeaderboard: () => Promise<void>;
   closeOfflineModal: () => void;
 }
@@ -28,6 +31,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   offlineBonus: 0,
   showOfflineModal: false,
   leaderboard: [],
+
+  addCoins: (amount) => set((state) => ({ coins: state.coins + amount })),
 
   load: async () => {
     const tg = (window as any).Telegram?.WebApp;
@@ -56,9 +61,18 @@ export const useGameStore = create<GameState>((set, get) => ({
     
     const userId = getTelegramUserId();
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/game/click?userId=${userId}`, { method: 'POST' });
-      const data = await res.json();
-      if (data) set({ coins: Number(data.coins) });
+      await fetch(`${import.meta.env.VITE_API_URL}/game/click?userId=${userId}`, { method: 'POST' });
+    } catch (e) { console.error(e); }
+  },
+
+  syncOnline: async (earned) => {
+    const userId = getTelegramUserId();
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL}/game/sync?userId=${userId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ earned })
+      });
     } catch (e) { console.error(e); }
   },
 

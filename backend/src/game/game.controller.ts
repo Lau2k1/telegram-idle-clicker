@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query } from '@nestjs/common';
+import { Controller, Get, Post, Query, Body } from '@nestjs/common';
 import { GameService } from './game.service';
 
 @Controller('game')
@@ -18,6 +18,11 @@ export class GameController {
   @Post('upgrade')
   upgrade(@Query('userId') userId: string, @Query('type') type: 'click' | 'income' | 'limit') {
     return this.gameService.upgrade(Number(userId), type);
+  }
+
+  @Post('sync')
+  sync(@Query('userId') userId: string, @Body() body: { earned: number }) {
+    return this.gameService.syncCoins(Number(userId), body.earned);
   }
 
   @Get('leaderboard')

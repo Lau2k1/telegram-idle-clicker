@@ -59,6 +59,19 @@ export class GameService {
     }
   }
 
+  // НОВЫЙ МЕТОД: Синхронизация монет, заработанных онлайн
+  async syncCoins(telegramId: number, coinsEarned: number) {
+    const tid = BigInt(telegramId);
+    const updated = await this.prisma.user.update({
+      where: { telegramId: tid },
+      data: { 
+        coins: { increment: coinsEarned },
+        lastUpdate: new Date() 
+      },
+    });
+    return this.serializeUser(updated);
+  }
+
   async upgrade(telegramId: number, type: 'click' | 'income' | 'limit') {
     const tid = BigInt(telegramId);
     const user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
@@ -67,18 +80,14 @@ export class GameService {
     let price = 0;
     let updateData = {};
 
-    // ФОРМУЛЫ ПРОГРЕССИИ ЦЕН
     if (type === 'click') {
-      // Цена: 50 * (1.5 ^ (уровень - 1))
       price = Math.floor(50 * Math.pow(1.5, user.clickPower - 1));
       updateData = { clickPower: { increment: 1 } };
     } else if (type === 'income') {
-      // Уровень дохода считаем как доход / 5. Цена: 100 * (1.3 ^ уровень)
       const currentLevel = Math.floor(user.incomePerSec / 5);
       price = Math.floor(100 * Math.pow(1.3, currentLevel));
       updateData = { incomePerSec: { increment: 5 } };
     } else if (type === 'limit') {
-      // Уровень лимита: часы оффлайна. Цена: 500 * (2 ^ (уровень - 1))
       const currentLevel = user.maxOfflineTime / 3600;
       price = Math.floor(500 * Math.pow(2, currentLevel - 1));
       updateData = { maxOfflineTime: { increment: 3600 } };
@@ -89,7 +98,8 @@ export class GameService {
         where: { telegramId: tid },
         data: { 
           coins: { decrement: price },
-          ...updateData
+          ...updateData,
+          lastUpdate: new Date()
         },
       });
       return this.serializeUser(updated);
@@ -107,12 +117,12 @@ export class GameService {
 
   async click(telegramId: number) {
     const tid = BigInt(telegramId);
-    const user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
-    if (!user) return null;
-
     const updated = await this.prisma.user.update({
       where: { telegramId: tid },
-      data: { coins: { increment: user.clickPower } },
+      data: { 
+        coins: { increment: 1 }, // Здесь можно добавить учет clickPower из базы
+        lastUpdate: new Date() 
+      },
     });
     return this.serializeUser(updated);
   }

@@ -8,10 +8,12 @@ import OfflineModal from './components/OfflineModal';
 import './App.css';
 
 function App() {
-  const { load, showOfflineModal, offlineBonus, closeOfflineModal } = useGameStore();
+  const { load, incomePerSec, addCoins, syncOnline, showOfflineModal, offlineBonus, closeOfflineModal } = useGameStore();
   const [activePage, setActivePage] = useState('game');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  
+  const earnedRef = useRef(0);
   const isInitialMount = useRef(true);
 
   useEffect(() => {
@@ -21,9 +23,33 @@ function App() {
     }
   }, [load]);
 
+  // СИСТЕМА ОНЛАЙН ДОХОДА
+  useEffect(() => {
+    if (!isReady || incomePerSec <= 0) return;
+
+    const tickInterval = setInterval(() => {
+      addCoins(incomePerSec);
+      earnedRef.current += incomePerSec;
+    }, 1000);
+
+    const syncInterval = setInterval(() => {
+      if (earnedRef.current > 0) {
+        syncOnline(earnedRef.current);
+        earnedRef.current = 0;
+      }
+    }, 30000); // Синхронизация каждые 30 секунд
+
+    return () => {
+      clearInterval(tickInterval);
+      clearInterval(syncInterval);
+      // Синхронизация при закрытии/уходе
+      if (earnedRef.current > 0) syncOnline(earnedRef.current);
+    };
+  }, [isReady, incomePerSec, addCoins, syncOnline]);
+
   const navigate = (p: string) => { setActivePage(p); setIsMenuOpen(false); };
 
-  if (!isReady) return <div className="h-screen bg-[#0a0c1a] flex items-center justify-center text-yellow-500">ЗАГРУЗКА...</div>;
+  if (!isReady) return <div className="h-screen bg-[#0a0c1a] flex items-center justify-center text-yellow-500 font-bold">ЗАГРУЗКА...</div>;
 
   return (
     <div className="app-container">
@@ -31,7 +57,7 @@ function App() {
         <button className="menu-toggle" onClick={() => setIsMenuOpen(true)}>
           <span></span><span></span><span></span>
         </button>
-        <h1 className="logo">GOLD MINER</h1>
+        <h1 className="logo text-yellow-500">GOLD MINER</h1>
         <div className="w-8"></div>
       </header>
 
@@ -44,11 +70,11 @@ function App() {
 
       <div className={`side-menu-overlay ${isMenuOpen ? 'open' : ''}`} onClick={() => setIsMenuOpen(false)}>
         <div className="side-menu" onClick={e => e.stopPropagation()}>
-          <h2 className="text-yellow-500 font-black mb-6">МЕНЮ</h2>
-          <button onClick={() => navigate('game')} className="menu-item">⛏️ Майнинг</button>
-          <button onClick={() => navigate('shop')} className="menu-item">🛒 Магазин</button>
-          <button onClick={() => navigate('leaders')} className="menu-item">🏆 Лидеры</button>
-          <button onClick={() => navigate('stats')} className="menu-item">📊 Статистика</button>
+          <h2 className="text-yellow-500 font-black mb-6 text-xl">МЕНЮ</h2>
+          <button onClick={() => navigate('game')} className={`menu-item ${activePage === 'game' ? 'active' : ''}`}>⛏️ Майнинг</button>
+          <button onClick={() => navigate('shop')} className={`menu-item ${activePage === 'shop' ? 'active' : ''}`}>🛒 Магазин</button>
+          <button onClick={() => navigate('leaders')} className={`menu-item ${activePage === 'leaders' ? 'active' : ''}`}>🏆 Лидеры</button>
+          <button onClick={() => navigate('stats')} className={`menu-item ${activePage === 'stats' ? 'active' : ''}`}>📊 Статистика</button>
         </div>
       </div>
 
