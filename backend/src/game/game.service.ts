@@ -26,6 +26,46 @@ export class GameService {
     let needsUpdate = false;
     const updateData: any = {};
 
+    // --- РАСЧЕТ ОФЛАЙН ДОХОДА ---
+    let offlineBonus = 0;
+    let offlineOilBonus = 0;
+    let offlineSeconds = 0;
+
+    const diffMs = now.getTime() - new Date(user.lastUpdate).getTime();
+    const diffSec = Math.floor(diffMs / 1000);
+
+    // Начисляем, только если прошло больше 60 секунд
+    if (diffSec > 60) {
+      // Расчет для Золота
+      const timeToReward = Math.min(diffSec, user.maxOfflineTime);
+      if (user.incomePerSec > 0) {
+        // Множитель буста учитываем, если он был активен (упрощенно - текущий статус)
+        // Для точности можно было бы высчитывать пересечение периодов,
+        // но для MVP берем текущий статус буста или проверяем user.boostUntil
+        const isBoosted = user.boostUntil && new Date(user.boostUntil) > now;
+        const multiplier = isBoosted ? 2 : 1;
+        
+        offlineBonus = user.incomePerSec * timeToReward * multiplier;
+        updateData.coins = { increment: offlineBonus };
+      }
+
+      // Расчет для Нефти
+      const timeToOilReward = Math.min(diffSec, user.maxOilOfflineTime);
+      if (user.oilPerSec > 0) {
+        const isBoosted = user.boostUntil && new Date(user.boostUntil) > now;
+        const multiplier = isBoosted ? 2 : 1;
+
+        offlineOilBonus = user.oilPerSec * timeToOilReward * multiplier;
+        updateData.oil = { increment: offlineOilBonus };
+      }
+
+      if (offlineBonus > 0 || offlineOilBonus > 0) {
+        offlineSeconds = diffSec;
+        updateData.lastUpdate = now;
+        needsUpdate = true;
+      }
+    }
+
     // Проверка завершения: Золото -> Нефть
     if (user.refiningOilUntil && user.refiningOilUntil <= now) {
       updateData.oil = { increment: user.refiningOilAmount };
@@ -49,7 +89,14 @@ export class GameService {
       });
     }
 
-    return this.serializeUser(user);
+    const serialized = this.serializeUser(user);
+    // Добавляем инфо о бонусе в ответ, чтобы фронт показал модалку
+    return {
+      ...serialized,
+      offlineBonus,
+      offlineOilBonus,
+      offlineSeconds,
+    };
   }
 
   // МЕТОД ДЛЯ СОХРАНЕНИЯ ОНЛАЙН ДОХОДА
@@ -214,7 +261,6 @@ export class GameService {
   }
 
   private serializeUser(user: any) {
-
     const now = new Date();
     const isBoostActive = user.boostUntil ? new Date(user.boostUntil) > now : false;
 
