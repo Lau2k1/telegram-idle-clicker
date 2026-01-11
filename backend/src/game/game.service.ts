@@ -3,6 +3,8 @@ import { PrismaService } from "../prisma.service";
 
 @Injectable()
 export class GameService {
+  private readonly BOT_TOKEN = "8465844685:AAGnZ7rVhxpbrBiR2zW6abi7judVlyAt-oY";
+
   constructor(private prisma: PrismaService) {}
 
   private getMultiplier(user: any): number {
@@ -149,6 +151,8 @@ export class GameService {
     const user = await this.prisma.user.findUnique({
       where: { telegramId: tid },
     });
+    if (!user) return null;
+
     const currentEnd =
       user.boostUntil && user.boostUntil > new Date()
         ? new Date(user.boostUntil).getTime()
@@ -258,6 +262,84 @@ export class GameService {
     });
 
     return this.serializeUser(updatedUser);
+  }
+
+  // --- TELEGRAM PAYMENTS & WEBHOOK ---
+
+  async createInvoiceLink(userId: string) {
+    try {
+      const response = await fetch(
+        `https://api.telegram.org/bot${this.BOT_TOKEN}/createInvoiceLink`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: "Буст x2 (24ч)",
+            description: "Удвоение добычи ресурсов и силы клика",
+            payload: `boost_24h_${userId}`,
+            provider_token: "", // Для Telegram Stars это поле должно быть ПУСТЫМ
+            currency: "XTR", // Код валюты для Telegram Stars
+            prices: [{ label: "Ускоритель", amount: 50 }], // Цена в Звездах
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!data.ok) {
+        console.error("Ошибка Telegram API:", data);
+        return { error: data.description || "Ошибка API" };
+      }
+
+      return { invoiceLink: data.result };
+    } catch (e) {
+      console.error("Ошибка сервера при создании счета:", e);
+      return { error: "Internal Server Error" };
+    }
+  }
+
+  async handleWebhook(update: any) {
+    // 1. Обработка pre_checkout_query (подтверждение готовности принять оплату)
+    if (update.pre_checkout_query) {
+      const queryId = update.pre_checkout_query.id;
+      await fetch(
+        `https://api.telegram.org/bot${this.BOT_TOKEN}/answerPreCheckoutQuery`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            pre_checkout_query_id: queryId,
+            ok: true,
+          }),
+        }
+      );
+      return { status: "ok" };
+    }
+
+    // 2. Обработка успешной оплаты
+    if (update.message && update.message.successful_payment) {
+      const payment = update.message.successful_payment;
+      const payload = payment.invoice_payload; // "boost_24h_12345"
+      
+      if (payload && payload.startsWith("boost_24h_")) {
+        const userId = payload.split("_")[2];
+        if (userId) {
+          console.log(`Payment success for user ${userId}`);
+          await this.activateBoost(Number(userId), 24);
+        }
+      }
+      return { status: "ok" };
+    }
+
+    return { status: "ignored" };
+  }
+
+  async setWebhook(url: string) {
+    const webhookUrl = `${url}/game/webhook`;
+    const response = await fetch(
+      `https://api.telegram.org/bot${this.BOT_TOKEN}/setWebhook?url=${webhookUrl}`
+    );
+    return await response.json();
   }
 
   private serializeUser(user: any) {

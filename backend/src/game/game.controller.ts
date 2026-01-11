@@ -3,7 +3,8 @@ import { GameService } from "./game.service";
 
 @Controller("game")
 export class GameController {
-  private readonly BOT_TOKEN = "8465844685:AAGnZ7rVhxpbrBiR2zW6abi7judVlyAt-oY";
+  // URL бэкенда на Railway
+  private readonly BACKEND_URL = "https://successful-enchantment-production.up.railway.app";
 
   constructor(private readonly gameService: GameService) {}
 
@@ -37,35 +38,7 @@ export class GameController {
 
   @Post("create-boost-invoice")
   async createInvoice(@Query("userId") userId: string) {
-    try {
-      const response = await fetch(
-        `https://api.telegram.org/bot${this.BOT_TOKEN}/createInvoiceLink`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: "Буст x2 (24ч)",
-            description: "Удвоение добычи ресурсов и силы клика",
-            payload: `boost_24h_${userId}`,
-            provider_token: "", // Для Telegram Stars это поле должно быть ПУСТЫМ
-            currency: "XTR", // Код валюты для Telegram Stars
-            prices: [{ label: "Ускоритель", amount: 50 }], // Цена в Звездах
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!data.ok) {
-        console.error("Ошибка Telegram API:", data);
-        return { error: data.description || "Ошибка API" };
-      }
-
-      return { invoiceLink: data.result };
-    } catch (e) {
-      console.error("Ошибка сервера при создании счета:", e);
-      return { error: "Internal Server Error" };
-    }
+    return this.gameService.createInvoiceLink(userId);
   }
 
   @Post("activate-boost")
@@ -89,5 +62,17 @@ export class GameController {
       type,
       parseInt(amount)
     );
+  }
+
+  // --- WEBHOOK ENDPOINTS ---
+
+  @Post("webhook")
+  async webhook(@Body() update: any) {
+    return this.gameService.handleWebhook(update);
+  }
+
+  @Get("set-webhook")
+  async setWebhook() {
+    return this.gameService.setWebhook(this.BACKEND_URL);
   }
 }

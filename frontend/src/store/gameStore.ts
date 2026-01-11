@@ -143,11 +143,12 @@ export const useGameStore = create<GameState>((set, get) => ({
       
       if (invoiceLink) {
         tg.openInvoice(invoiceLink, async (status: string) => {
-          if (status === 'paid' || status === 'pending') {
-            // После оплаты принудительно активируем буст
-            const actRes = await fetch(`${import.meta.env.VITE_API_URL}/game/activate-boost?userId=${userId}`, { method: 'POST' });
-            const newData = await actRes.json();
-            set({ ...newData });
+          if (status === 'paid') {
+            // Оплата прошла успешно (webhook обработал pre_checkout)
+            // Ждем пару секунд, чтобы сервер успел обработать successful_payment
+            setTimeout(async () => {
+               await get().load();
+            }, 2000);
           }
         });
       }
