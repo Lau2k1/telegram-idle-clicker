@@ -82,7 +82,7 @@ const Shop = () => {
   ];
 
   const accelerators = [
-    { id: "time_warp_1m", title: "1 минута", price: 1, desc: "Сокращает время на 1 мин" },
+    { id: "time_warp_1m", title: "1 минута", price: 2, desc: "Сокращает время на 1 мин" },
     { id: "time_warp_3m", title: "3 минуты", price: 2, desc: "Сокращает время на 3 мин" },
     { id: "time_warp_15m", title: "15 минут", price: 5, desc: "Сокращает время на 15 мин" },
     { id: "time_warp_1h", title: "1 час", price: 15, desc: "Сокращает время на 1 час" },
