@@ -31,11 +31,11 @@ model User {
 
 model InventoryItem {
   id        Int      @id @default(autoincrement())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
+  telegramId BigInt
+  user      User     @relation(fields: [telegramId], references: [telegramId])
   itemId    String
   quantity  Int      @default(1)
   acquiredAt DateTime @default(now())
 
-  @@unique([userId, itemId])
+  @@unique([telegramId, itemId])
 }

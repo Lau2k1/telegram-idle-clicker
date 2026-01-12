@@ -82,16 +82,16 @@ const Shop = () => {
   ];
 
   const accelerators = [
-    { id: "time_warp_1m", title: "1 минута", price: 2, desc: "Сокращает время на 1 мин" },
+    { id: "time_warp_1m", title: "1 минута", price: 1, desc: "Сокращает время на 1 мин" },
     { id: "time_warp_3m", title: "3 минуты", price: 2, desc: "Сокращает время на 3 мин" },
     { id: "time_warp_15m", title: "15 минут", price: 5, desc: "Сокращает время на 15 мин" },
-    { id: "time_warp_1h", title: "1 час", price: 15, desc: "Сокращает время на 1 час" },
-    { id: "time_warp_4h", title: "4 часа", price: 50, desc: "Сокращает время на 4 часа" },
-    { id: "time_warp_8h", title: "8 часов", price: 90, desc: "Сокращает время на 8 часов" },
-    { id: "time_warp_15h", title: "15 часов", price: 150, desc: "Сокращает время на 15 часов" },
-    { id: "time_warp_24h", title: "24 часа", price: 200, desc: "Сокращает время на 24 часа" },
-    { id: "time_warp_3d", title: "3 дня", price: 500, desc: "Сокращает время на 3 дня" },
-    { id: "time_warp_7d", title: "7 дней", price: 1000, desc: "Сокращает время на 7 дней" },
+    { id: "time_warp_1h", title: "1 час", price: 10, desc: "Сокращает время на 1 час" },
+    { id: "time_warp_4h", title: "4 часа", price: 25, desc: "Сокращает время на 4 часа" },
+    { id: "time_warp_8h", title: "8 часов", price: 40, desc: "Сокращает время на 8 часов" },
+    { id: "time_warp_15h", title: "15 часов", price: 70, desc: "Сокращает время на 15 часов" },
+    { id: "time_warp_24h", title: "24 часа", price: 100, desc: "Сокращает время на 24 часа" },
+    { id: "time_warp_3d", title: "3 дня", price: 150, desc: "Сокращает время на 3 дня" },
+    { id: "time_warp_7d", title: "7 дней", price: 220, desc: "Сокращает время на 7 дней" },
   ];
 
   return (

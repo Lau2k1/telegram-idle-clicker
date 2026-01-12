@@ -517,8 +517,8 @@ export class GameService {
     // Используем upsert
     const existingItem = await this.prisma.inventoryItem.findUnique({
       where: {
-        userId_itemId: {
-          userId: user.id,
+        telegramId_itemId: {
+          telegramId: tid,
           itemId: itemId,
         },
       },
@@ -532,7 +532,7 @@ export class GameService {
     } else {
       await this.prisma.inventoryItem.create({
         data: {
-          userId: user.id,
+          telegramId: tid,
           itemId: itemId,
           quantity: 1,
         },
@@ -571,7 +571,10 @@ export class GameService {
         : null,
       refiningOilAmount: user.refiningOilAmount || 0,
       refiningFuelAmount: user.refiningFuelAmount || 0,
-      inventory: user.inventory || [],
+      inventory: (user.inventory || []).map((item: any) => ({
+        ...item,
+        telegramId: item.telegramId.toString(),
+      })),
     };
   }
 }
