@@ -5,6 +5,79 @@ import { PrismaService } from "../prisma.service";
 export class GameService {
   private readonly BOT_TOKEN = "8465844685:AAGnZ7rVhxpbrBiR2zW6abi7judVlyAt-oY";
 
+  private readonly ITEMS = {
+    time_warp_1m: {
+      name: "Ускоритель (1 мин)",
+      description: "Сокращает время переработки на 1 минуту",
+      price: 1,
+      type: "time_warp",
+      duration: 60,
+    },
+    time_warp_3m: {
+      name: "Ускоритель (3 мин)",
+      description: "Сокращает время переработки на 3 минуты",
+      price: 2,
+      type: "time_warp",
+      duration: 180,
+    },
+    time_warp_15m: {
+      name: "Ускоритель (15 мин)",
+      description: "Сокращает время переработки на 15 минут",
+      price: 5,
+      type: "time_warp",
+      duration: 900,
+    },
+    time_warp_1h: {
+      name: "Ускоритель (1 ч)",
+      description: "Сокращает время переработки на 1 час",
+      price: 15,
+      type: "time_warp",
+      duration: 3600,
+    },
+    time_warp_4h: {
+      name: "Ускоритель (4 ч)",
+      description: "Сокращает время переработки на 4 часа",
+      price: 50,
+      type: "time_warp",
+      duration: 14400,
+    },
+    time_warp_8h: {
+      name: "Ускоритель (8 ч)",
+      description: "Сокращает время переработки на 8 часов",
+      price: 90,
+      type: "time_warp",
+      duration: 28800,
+    },
+    time_warp_15h: {
+      name: "Ускоритель (15 ч)",
+      description: "Сокращает время переработки на 15 часов",
+      price: 150,
+      type: "time_warp",
+      duration: 54000,
+    },
+    time_warp_24h: {
+      name: "Ускоритель (24 ч)",
+      description: "Сокращает время переработки на 24 часа",
+      price: 200,
+      type: "time_warp",
+      duration: 86400,
+    },
+    time_warp_3d: {
+      name: "Ускоритель (3 дн)",
+      description: "Сокращает время переработки на 3 дня",
+      price: 500,
+      type: "time_warp",
+      duration: 259200,
+    },
+    time_warp_7d: {
+      name: "Ускоритель (7 дн)",
+      description: "Сокращает время переработки на 7 дней",
+      price: 1000,
+      type: "time_warp",
+      duration: 604800,
+    },
+  };
+
   constructor(private prisma: PrismaService) {}
 
   private getMultiplier(user: any): number {
@@ -267,22 +340,103 @@ export class GameService {
     return this.serializeUser(updatedUser);
   }
 
+  async useItem(telegramId: number, itemId: string) {
+    const tid = BigInt(telegramId);
+    const user = await this.prisma.user.findUnique({
+      where: { telegramId: tid },
+      include: { inventory: true },
+    });
+    if (!user) throw new Error("Пользователь не найден");
+
+    const inventoryItem = user.inventory.find((i) => i.itemId === itemId);
+    if (!inventoryItem || inventoryItem.quantity <= 0) {
+      throw new Error("Предмет отсутствует в инвентаре");
+    }
+
+    const itemDef = this.ITEMS[itemId as keyof typeof this.ITEMS];
+    if (!itemDef) throw new Error("Неизвестный предмет");
+
+    const now = new Date();
+    const updateData: any = {};
+    let used = false;
+
+    if (itemDef.type === "time_warp") {
+      // Сокращаем время переработки
+      const durationMs = itemDef.duration * 1000;
+
+      if (user.refiningOilUntil && user.refiningOilUntil > now) {
+        const newTime = new Date(user.refiningOilUntil.getTime() - durationMs);
+        updateData.refiningOilUntil = newTime < now ? now : newTime;
+        used = true;
+      }
+
+      if (user.refiningFuelUntil && user.refiningFuelUntil > now) {
+        const newTime = new Date(user.refiningFuelUntil.getTime() - durationMs);
+        updateData.refiningFuelUntil = newTime < now ? now : newTime;
+        used = true;
+      }
+
+      if (!used) {
+        throw new Error("Нет активных процессов переработки");
+      }
+    }
+
+    // Транзакция: списать предмет, применить эффект
+    const updatedUser = await this.prisma.$transaction(async (prisma) => {
+      // 1. Уменьшаем кол-во
+      if (inventoryItem.quantity === 1) {
+        await prisma.inventoryItem.delete({
+          where: { id: inventoryItem.id },
+        });
+      } else {
+        await prisma.inventoryItem.update({
+          where: { id: inventoryItem.id },
+          data: { quantity: { decrement: 1 } },
+        });
+      }
+
+      // 2. Обновляем юзера
+      return prisma.user.update({
+        where: { telegramId: tid },
+        data: updateData,
+        include: { inventory: true },
+      });
+    });
+
+    return this.serializeUser(updatedUser);
+  }
+
   // --- TELEGRAM PAYMENTS & WEBHOOK ---
 
-  async createInvoiceLink(userId: string) {
+  async createInvoiceLink(userId: string, itemId: string = "boost_24h") {
     try {
+      let title = "Буст x2 (24ч)";
+      let description = "Удвоение добычи ресурсов и силы клика";
+      let price = 50;
+      let payload = `boost_24h_${userId}`;
+
+      if (itemId !== "boost_24h") {
+        const item = this.ITEMS[itemId as keyof typeof this.ITEMS];
+        if (!item) throw new Error("Товар не найден");
+        
+        title = item.name;
+        description = item.description;
+        price = item.price;
+        payload = `item_${itemId}_${userId}`;
+      }
+
       const response = await fetch(
         `https://api.telegram.org/bot${this.BOT_TOKEN}/createInvoiceLink`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            title: "Буст x2 (24ч)",
-            description: "Удвоение добычи ресурсов и силы клика",
-            payload: `boost_24h_${userId}`,
+            title: title,
+            description: description,
+            payload: payload,
             provider_token: "", // Для Telegram Stars это поле должно быть ПУСТЫМ
             currency: "XTR", // Код валюты для Telegram Stars
-            prices: [{ label: "Ускоритель", amount: 50 }], // Цена в Звездах
+            prices: [{ label: title, amount: price }], // Цена в Звездах
           }),
         }
       );
@@ -322,19 +476,63 @@ export class GameService {
     // 2. Обработка успешной оплаты
     if (update.message && update.message.successful_payment) {
       const payment = update.message.successful_payment;
-      const payload = payment.invoice_payload; // "boost_24h_12345"
+      const payload = payment.invoice_payload; // "boost_24h_12345" или "item_time_warp_1h_12345"
       
-      if (payload && payload.startsWith("boost_24h_")) {
-        const userId = payload.split("_")[2];
-        if (userId) {
-          console.log(`Payment success for user ${userId}`);
-          await this.activateBoost(Number(userId), 24);
+      if (payload) {
+        if (payload.startsWith("boost_24h_")) {
+          const userId = payload.split("_")[2];
+          if (userId) {
+            console.log(`Boost Payment success for user ${userId}`);
+            await this.activateBoost(Number(userId), 24);
+          }
+        } else if (payload.startsWith("item_")) {
+          // payload format: item_ITEMID_USERID
+          const parts = payload.split("_");
+          const userIdStr = parts[parts.length - 1];
+          const itemId = parts.slice(1, parts.length - 1).join("_");
+          const userId = Number(userIdStr);
+
+          if (userId && itemId) {
+             console.log(`Item Payment success for user ${userId}, item ${itemId}`);
+             await this.addItemToInventory(userId, itemId);
+          }
         }
       }
       return { status: "ok" };
     }
 
     return { status: "ignored" };
+  }
+
+  async addItemToInventory(telegramId: number, itemId: string) {
+    const tid = BigInt(telegramId);
+    const user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
+    if (!user) return;
+
+    // Используем upsert
+    const existingItem = await this.prisma.inventoryItem.findUnique({
+      where: {
+        userId_itemId: {
+          userId: user.id,
+          itemId: itemId,
+        },
+      },
+    });
+
+    if (existingItem) {
+      await this.prisma.inventoryItem.update({
+        where: { id: existingItem.id },
+        data: { quantity: { increment: 1 } },
+      });
+    } else {
+      await this.prisma.inventoryItem.create({
+        data: {
+          userId: user.id,
+          itemId: itemId,
+          quantity: 1,
+        },
+      });
+    }
   }
 
   async setWebhook(url: string) {

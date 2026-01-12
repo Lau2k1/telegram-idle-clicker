@@ -13,6 +13,7 @@ const Shop = () => {
     oilPerSec,
     maxOilOfflineTime,
     buyUpgrade,
+    buyItem,
   } = useGameStore();
 
   // Расчет цен (соответствует логике бэкенда)
@@ -78,6 +79,19 @@ const Shop = () => {
     { id: "LAND", label: "Для Земли", icon: "🌍" },
     { id: "ACCELERATORS", label: "Ускорители", icon: "⚡" },
     { id: "PREMIUM", label: "Премиум", icon: "⭐" },
+  ];
+
+  const accelerators = [
+    { id: "time_warp_1m", title: "1 минута", price: 1, desc: "Сокращает время на 1 мин" },
+    { id: "time_warp_3m", title: "3 минуты", price: 2, desc: "Сокращает время на 3 мин" },
+    { id: "time_warp_15m", title: "15 минут", price: 5, desc: "Сокращает время на 15 мин" },
+    { id: "time_warp_1h", title: "1 час", price: 15, desc: "Сокращает время на 1 час" },
+    { id: "time_warp_4h", title: "4 часа", price: 50, desc: "Сокращает время на 4 часа" },
+    { id: "time_warp_8h", title: "8 часов", price: 90, desc: "Сокращает время на 8 часов" },
+    { id: "time_warp_15h", title: "15 часов", price: 150, desc: "Сокращает время на 15 часов" },
+    { id: "time_warp_24h", title: "24 часа", price: 200, desc: "Сокращает время на 24 часа" },
+    { id: "time_warp_3d", title: "3 дня", price: 500, desc: "Сокращает время на 3 дня" },
+    { id: "time_warp_7d", title: "7 дней", price: 1000, desc: "Сокращает время на 7 дней" },
   ];
 
   return (
@@ -157,14 +171,24 @@ const Shop = () => {
 
       {/* Контент категории: Ускорители */}
       {activeCategory === "ACCELERATORS" && (
-        <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in zoom-in-95 duration-300">
-          <div className="text-6xl mb-4 opacity-20">⚡</div>
-          <h3 className="text-xl font-bold text-slate-300 mb-2">
-            Ускорители в пути
-          </h3>
-          <p className="text-sm text-slate-500 max-w-[200px]">
-            Новые предметы для ускорения производства появятся совсем скоро!
-          </p>
+        <div className="grid grid-cols-2 gap-3 animate-in fade-in zoom-in-95 duration-300">
+          {accelerators.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => buyItem(item.id)}
+              className="flex flex-col items-center p-4 rounded-2xl bg-white/5 border border-white/10 active:scale-95 transition-all"
+            >
+              <div className="text-3xl mb-2">⚡</div>
+              <h3 className="font-bold text-sm text-center mb-1">{item.title}</h3>
+              <p className="text-[10px] text-slate-400 text-center mb-3 leading-tight">
+                {item.desc}
+              </p>
+              <div className="mt-auto bg-blue-600 px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1">
+                <span>{item.price}</span>
+                <span>⭐</span>
+              </div>
+            </button>
+          ))}
         </div>
       )}
 

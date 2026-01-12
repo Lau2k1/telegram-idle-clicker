@@ -45,6 +45,8 @@ interface GameState {
   syncOnline: (c: number, o: number) => Promise<void>;
   buyUpgrade: (type: string) => Promise<void>;
   buyBoost: () => Promise<void>;
+  buyItem: (itemId: string) => Promise<void>;
+  useItem: (itemId: string) => Promise<void>;
   closeOfflineModal: () => void;
 }
 
@@ -148,14 +150,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     const tg = (window as any).Telegram?.WebApp;
     
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/game/create-boost-invoice?userId=${userId}`, { method: 'POST' });
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/game/create-invoice?userId=${userId}&itemId=boost_24h`, { method: 'POST' });
       const { invoiceLink } = await res.json();
       
       if (invoiceLink) {
         tg.openInvoice(invoiceLink, async (status: string) => {
           if (status === 'paid') {
-            // Оплата прошла успешно (webhook обработал pre_checkout)
-            // Ждем пару секунд, чтобы сервер успел обработать successful_payment
             setTimeout(async () => {
                await get().load();
             }, 2000);
@@ -164,6 +164,45 @@ export const useGameStore = create<GameState>((set, get) => ({
       }
     } catch (e) {
       console.error("Payment flow failed");
+    }
+  },
+
+  // Покупка предмета (Telegram Stars)
+  buyItem: async (itemId: string) => {
+    const userId = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id || 12345;
+    const tg = (window as any).Telegram?.WebApp;
+    
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/game/create-invoice?userId=${userId}&itemId=${itemId}`, { method: 'POST' });
+      const { invoiceLink } = await res.json();
+      
+      if (invoiceLink) {
+        tg.openInvoice(invoiceLink, async (status: string) => {
+          if (status === 'paid') {
+            setTimeout(async () => {
+               await get().load();
+            }, 2000);
+          }
+        });
+      }
+    } catch (e) {
+      console.error("Payment flow failed");
+    }
+  },
+
+  // Использование предмета
+  useItem: async (itemId: string) => {
+    const userId = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id || 12345;
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/game/use-item?userId=${userId}&itemId=${itemId}`, { method: 'POST' });
+      const data = await res.json();
+      if (data && !data.error) {
+        set({ ...data });
+      } else {
+        console.error("Use item failed:", data.error);
+      }
+    } catch (e) {
+      console.error("Use item failed", e);
     }
   },
 

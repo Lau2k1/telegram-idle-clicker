@@ -36,9 +36,20 @@ export class GameController {
     return this.gameService.upgrade(Number(userId), type);
   }
 
-  @Post("create-boost-invoice")
-  async createInvoice(@Query("userId") userId: string) {
-    return this.gameService.createInvoiceLink(userId);
+  @Post("create-invoice")
+  async createInvoice(
+    @Query("userId") userId: string,
+    @Query("itemId") itemId?: string
+  ) {
+    return this.gameService.createInvoiceLink(userId, itemId);
+  }
+
+  @Post("use-item")
+  async useItem(
+    @Query("userId") userId: string,
+    @Query("itemId") itemId: string
+  ) {
+    return this.gameService.useItem(Number(userId), itemId);
   }
 
   @Post("activate-boost")
