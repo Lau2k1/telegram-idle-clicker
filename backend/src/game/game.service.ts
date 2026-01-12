@@ -187,6 +187,7 @@ export class GameService {
         oil: { increment: earnedOil },
         lastUpdate: new Date(),
       },
+      include: { inventory: true },
     });
     return this.serializeUser(updated);
   }
@@ -218,6 +219,7 @@ export class GameService {
         coins: { increment: user.clickPower * multiplier },
         lastUpdate: new Date(),
       },
+      include: { inventory: true },
     });
     return this.serializeUser(updated);
   }
@@ -237,6 +239,7 @@ export class GameService {
     const updated = await this.prisma.user.update({
       where: { telegramId: tid },
       data: { boostUntil: newEnd },
+      include: { inventory: true },
     });
     return this.serializeUser(updated);
   }
@@ -287,6 +290,7 @@ export class GameService {
         ...updateData,
         lastUpdate: new Date(),
       },
+      include: { inventory: true },
     });
 
     return this.serializeUser(updated);
@@ -335,6 +339,7 @@ export class GameService {
     const updatedUser = await this.prisma.user.update({
       where: { telegramId: tid },
       data: data,
+      include: { inventory: true },
     });
 
     return this.serializeUser(updatedUser);
