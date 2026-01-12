@@ -194,26 +194,48 @@ const Shop = () => {
 
       {/* Контент категории: Премиум */}
       {activeCategory === "PREMIUM" && (
-        <div className="animate-in fade-in zoom-in-95 duration-300">
-          <div className="p-6 rounded-[32px] bg-gradient-to-br from-blue-600 to-purple-700 shadow-xl relative overflow-hidden group">
-            <div className="relative z-10">
-              <h3 className="font-black text-xl uppercase tracking-tighter mb-1">
-                Мгновенный буст x2
-              </h3>
-              <p className="text-sm opacity-80 mb-4">
-                Удвой доход и клики на всех планетах прямо сейчас!
-              </p>
-              <button
-                onClick={() => (useGameStore.getState() as any).buyBoost()}
-                className="bg-white text-blue-600 px-6 py-3 rounded-2xl font-black uppercase text-sm shadow-lg active:scale-90 transition-transform w-full"
-              >
-                Активировать за 50 ⭐
-              </button>
+        <div className="grid grid-cols-1 gap-4 animate-in fade-in zoom-in-95 duration-300">
+          {[
+            {
+              id: "boost_24h",
+              title: "Буст x2 (24ч)",
+              price: 50,
+              desc: "Удвоение дохода на 24 часа",
+            },
+            {
+              id: "boost_3d",
+              title: "Буст x2 (3 дня)",
+              price: 100,
+              desc: "Удвоение дохода на 3 дня",
+            },
+            {
+              id: "boost_7d",
+              title: "Буст x2 (7 дней)",
+              price: 200,
+              desc: "Удвоение дохода на 7 дней",
+            },
+          ].map((item) => (
+            <div
+              key={item.id}
+              className="p-6 rounded-[32px] bg-gradient-to-br from-blue-600 to-purple-700 shadow-xl relative overflow-hidden group"
+            >
+              <div className="relative z-10">
+                <h3 className="font-black text-xl uppercase tracking-tighter mb-1">
+                  {item.title}
+                </h3>
+                <p className="text-sm opacity-80 mb-4">{item.desc}</p>
+                <button
+                  onClick={() => useGameStore.getState().buyBoost(item.id)}
+                  className="bg-white text-blue-600 px-6 py-3 rounded-2xl font-black uppercase text-sm shadow-lg active:scale-90 transition-transform w-full"
+                >
+                  Активировать за {item.price} ⭐
+                </button>
+              </div>
+              <span className="absolute -right-4 -bottom-4 text-8xl opacity-20 group-hover:scale-110 transition-transform">
+                ⭐
+              </span>
             </div>
-            <span className="absolute -right-4 -bottom-4 text-8xl opacity-20 group-hover:scale-110 transition-transform">
-              ⭐
-            </span>
-          </div>
+          ))}
         </div>
       )}
     </div>

@@ -416,11 +416,21 @@ export class GameService {
   async createInvoiceLink(userId: string, itemId: string = "boost_24h") {
     try {
       let title = "Буст x2 (24ч)";
-      let description = "Удвоение добычи ресурсов и силы клика";
+      let description = "Удвоение добычи ресурсов и силы клика на 24 часа";
       let price = 50;
       let payload = `boost_24h_${userId}`;
 
-      if (itemId !== "boost_24h") {
+      if (itemId === "boost_3d") {
+        title = "Буст x2 (3 дня)";
+        description = "Удвоение добычи ресурсов и силы клика на 3 дня";
+        price = 100;
+        payload = `boost_3d_${userId}`;
+      } else if (itemId === "boost_7d") {
+        title = "Буст x2 (7 дней)";
+        description = "Удвоение добычи ресурсов и силы клика на 7 дней";
+        price = 200;
+        payload = `boost_7d_${userId}`;
+      } else if (itemId !== "boost_24h") {
         const item = this.ITEMS[itemId as keyof typeof this.ITEMS];
         if (!item) throw new Error("Товар не найден");
         
@@ -484,11 +494,20 @@ export class GameService {
       const payload = payment.invoice_payload; // "boost_24h_12345" или "item_time_warp_1h_12345"
       
       if (payload) {
-        if (payload.startsWith("boost_24h_")) {
-          const userId = payload.split("_")[2];
+        if (payload.startsWith("boost_")) {
+          const parts = payload.split("_");
+          // boost_24h_USERID -> parts[1] = "24h", parts[2] = USERID
+          // boost_3d_USERID -> parts[1] = "3d", parts[2] = USERID
+          const durationType = parts[1];
+          const userId = parts[2];
+
           if (userId) {
-            console.log(`Boost Payment success for user ${userId}`);
-            await this.activateBoost(Number(userId), 24);
+            let hours = 24;
+            if (durationType === "3d") hours = 72;
+            if (durationType === "7d") hours = 168;
+
+            console.log(`Boost Payment success for user ${userId} (${hours}h)`);
+            await this.activateBoost(Number(userId), hours);
           }
         } else if (payload.startsWith("item_")) {
           // payload format: item_ITEMID_USERID

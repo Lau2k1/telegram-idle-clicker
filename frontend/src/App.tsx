@@ -8,6 +8,7 @@ import Leaderboard from "./pages/Leaderboard";
 import Stats from "./pages/Stats";
 import Inventory from "./pages/Inventory";
 import OfflineModal from "./components/OfflineModal";
+import { BoostTimer } from "./components/BoostTimer";
 
 function App() {
   const {
@@ -83,8 +84,8 @@ function App() {
 
       <header className="h-20 shrink-0 p-4 flex justify-between bg-black/40 backdrop-blur-md z-40 border-b border-white/5">
         <div className="flex flex-col">
-          <span className="text-[10px] text-yellow-500/70 uppercase font-black tracking-widest">
-            Золото {isBoostActive && "x2"}
+          <span className="text-[10px] text-yellow-500/70 uppercase font-black tracking-widest flex items-center gap-1">
+            Золото {isBoostActive && <span className="text-yellow-400">x2</span>} <BoostTimer />
           </span>
           <div className="flex items-center gap-2">
             <span className="text-xl">💰</span>

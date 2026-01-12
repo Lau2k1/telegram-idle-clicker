@@ -44,7 +44,7 @@ interface GameState {
   click: () => Promise<void>;
   syncOnline: (c: number, o: number) => Promise<void>;
   buyUpgrade: (type: string) => Promise<void>;
-  buyBoost: () => Promise<void>;
+  buyBoost: (itemId?: string) => Promise<void>;
   buyItem: (itemId: string) => Promise<void>;
   useItem: (itemId: string) => Promise<void>;
   closeOfflineModal: () => void;
@@ -145,12 +145,12 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   // Покупка буста x2 (Telegram Stars)
-  buyBoost: async () => {
+  buyBoost: async (itemId: string = "boost_24h") => {
     const userId = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id || 12345;
     const tg = (window as any).Telegram?.WebApp;
     
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/game/create-invoice?userId=${userId}&itemId=boost_24h`, { method: 'POST' });
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/game/create-invoice?userId=${userId}&itemId=${itemId}`, { method: 'POST' });
       const { invoiceLink } = await res.json();
       
       if (invoiceLink) {
