@@ -5,6 +5,7 @@ type Category = "LAND" | "ACCELERATORS" | "BUNDLES" | "PREMIUM";
 
 const Shop = () => {
   const [activeCategory, setActiveCategory] = useState<Category>("LAND");
+  const [showBundleDetails, setShowBundleDetails] = useState(false);
   const {
     coins,
     oil,
@@ -125,6 +126,20 @@ const Shop = () => {
     { id: "time_warp_7d", title: "7 дней", price: 220, desc: "Сокращает время на 7 дней" },
   ];
 
+  const quickStartBundleItems = [
+    { name: "Буст x2 (3 дня)", quantity: 1, icon: "⭐" },
+    { name: "Ускоритель (7 дней)", quantity: 1, icon: "⚡" },
+    { name: "Ускоритель (3 дня)", quantity: 1, icon: "⚡" },
+    { name: "Ускоритель (24 часа)", quantity: 1, icon: "⚡" },
+    { name: "Ускоритель (15 часов)", quantity: 1, icon: "⚡" },
+    { name: "Ускоритель (8 часов)", quantity: 1, icon: "⚡" },
+    { name: "Ускоритель (4 часа)", quantity: 2, icon: "⚡" },
+    { name: "Ускоритель (1 час)", quantity: 4, icon: "⚡" },
+    { name: "Ускоритель (15 мин)", quantity: 10, icon: "⚡" },
+    { name: "Ускоритель (3 мин)", quantity: 30, icon: "⚡" },
+    { name: "Ускоритель (1 мин)", quantity: 100, icon: "⚡" },
+  ];
+
   return (
     <div className="p-4 flex flex-col gap-6 animate-in slide-in-from-right duration-300 pb-24">
       <div className="flex items-center gap-3">
@@ -240,6 +255,12 @@ const Shop = () => {
                   ускорителей!
                 </p>
                 <button
+                  onClick={() => setShowBundleDetails(true)}
+                  className="bg-white/20 hover:bg-white/30 text-white px-6 py-2 rounded-xl font-bold text-xs uppercase mb-3 transition-colors w-full"
+                >
+                  Посмотреть состав
+                </button>
+                <button
                   onClick={() =>
                     useGameStore.getState().buyBoost("bundle_quick_start")
                   }
@@ -257,6 +278,53 @@ const Shop = () => {
               Нет доступных наборов
             </div>
           )}
+        </div>
+      )}
+
+      {showBundleDetails && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#1a1c2c] w-full max-w-md rounded-[32px] p-6 border border-white/10 shadow-2xl flex flex-col max-h-[80vh]">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-black uppercase tracking-tighter">
+                Состав набора
+              </h3>
+              <button
+                onClick={() => setShowBundleDetails(false)}
+                className="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+              {quickStartBundleItems.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between p-3 bg-white/5 rounded-xl"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">{item.icon}</span>
+                    <span className="font-bold text-sm">{item.name}</span>
+                  </div>
+                  <span className="font-black text-blue-400">
+                    x{item.quantity}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-white/10">
+              <button
+                onClick={() => {
+                  useGameStore.getState().buyBoost("bundle_quick_start");
+                  setShowBundleDetails(false);
+                }}
+                className="w-full bg-gradient-to-r from-orange-500 to-red-600 py-4 rounded-2xl font-black uppercase text-lg shadow-lg active:scale-95 transition-transform"
+              >
+                Купить за 300 ⭐
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
