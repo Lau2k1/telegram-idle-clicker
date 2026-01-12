@@ -1,5 +1,12 @@
 import { create } from "zustand";
 
+export interface InventoryItem {
+  id: number;
+  itemId: string;
+  quantity: number;
+  acquiredAt: string;
+}
+
 interface GameState {
   // Базовые ресурсы
   coins: number;
@@ -28,6 +35,8 @@ interface GameState {
   refiningFuelUntil: string | null;
   refiningOilAmount: number;
   refiningFuelAmount: number;
+
+  inventory: InventoryItem[];
 
   // Методы управления
   load: () => Promise<void>;
@@ -58,6 +67,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   refiningFuelUntil: null,
   refiningOilAmount: 0,
   refiningFuelAmount: 0,
+  inventory: [],
 
   // Локальное добавление (используется в App.tsx для тиков)
   addResources: (c, o) => set(s => ({ 

@@ -26,4 +26,16 @@ model User {
   refiningFuelUntil  DateTime?
   refiningOilAmount   Int @default(0)  // Количество для нефти
   refiningFuelAmount  Int @default(0) // Количество для топлива
+  inventory         InventoryItem[]
+}
+
+model InventoryItem {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  itemId    String
+  quantity  Int      @default(1)
+  acquiredAt DateTime @default(now())
+
+  @@unique([userId, itemId])
 }

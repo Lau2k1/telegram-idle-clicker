@@ -16,11 +16,13 @@ export class GameService {
     const tid = BigInt(telegramId);
     let user = await this.prisma.user.findUnique({
       where: { telegramId: tid },
+      include: { inventory: true },
     });
 
     if (!user) {
       user = await this.prisma.user.create({
         data: { telegramId: tid, firstName: firstName || "Аноним" },
+        include: { inventory: true },
       });
     }
 
@@ -88,6 +90,7 @@ export class GameService {
       user = await this.prisma.user.update({
         where: { telegramId: tid },
         data: updateData,
+        include: { inventory: true },
       });
     }
 
@@ -365,6 +368,7 @@ export class GameService {
         : null,
       refiningOilAmount: user.refiningOilAmount || 0,
       refiningFuelAmount: user.refiningFuelAmount || 0,
+      inventory: user.inventory || [],
     };
   }
 }

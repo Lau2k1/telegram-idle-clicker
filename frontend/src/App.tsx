@@ -6,6 +6,7 @@ import OilMine from "./pages/OilMine";
 import Refinery from "./pages/Refinery";
 import Leaderboard from "./pages/Leaderboard";
 import Stats from "./pages/Stats";
+import Inventory from "./pages/Inventory";
 import OfflineModal from "./components/OfflineModal";
 
 function App() {
@@ -71,6 +72,7 @@ function App() {
       case "refinery": return <Refinery />;
       case "leaderboard": return <Leaderboard />;
       case "stats": return <Stats />;
+      case "inventory": return <Inventory />;
       default: return <Game />;
     }
   };
@@ -184,6 +186,7 @@ function App() {
                 { id: "leaderboard", l: "Топ", i: "🏆" },
                 { id: "stats", l: "Статистика", i: "📊" },
                 { id: "refinery", l: "Переработка", i: "🏭" },
+                { id: "inventory", l: "Инвентарь", i: "🎒" },
               ].map((item) => (
                 <button
                   key={item.id}
