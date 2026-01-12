@@ -36,6 +36,7 @@ interface GameState {
   refiningOilAmount: number;
   refiningFuelAmount: number;
 
+  createdAt: string;
   inventory: InventoryItem[];
 
   // Методы управления
@@ -69,6 +70,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   refiningFuelUntil: null,
   refiningOilAmount: 0,
   refiningFuelAmount: 0,
+  createdAt: new Date().toISOString(),
   inventory: [],
 
   // Локальное добавление (используется в App.tsx для тиков)

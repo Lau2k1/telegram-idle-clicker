@@ -21,6 +21,7 @@ model User {
   boostUntil        DateTime? // Время окончания x2 буста
   processingUntil   DateTime?
   lastUpdate        DateTime  @default(now())
+  createdAt         DateTime  @default(now())
   fuel        Float    @default(0)
   refiningOilUntil   DateTime?
   refiningFuelUntil  DateTime?

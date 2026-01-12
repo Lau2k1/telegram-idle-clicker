@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useGameStore } from "../store/gameStore";
 
-type Category = "LAND" | "ACCELERATORS" | "PREMIUM";
+type Category = "LAND" | "ACCELERATORS" | "BUNDLES" | "PREMIUM";
 
 const Shop = () => {
   const [activeCategory, setActiveCategory] = useState<Category>("LAND");
@@ -14,6 +14,7 @@ const Shop = () => {
     maxOilOfflineTime,
     buyUpgrade,
     buyItem,
+    createdAt,
   } = useGameStore();
 
   // Расчет цен (соответствует логике бэкенда)
@@ -78,8 +79,38 @@ const Shop = () => {
   const categories: { id: Category; label: string; icon: string }[] = [
     { id: "LAND", label: "Для Земли", icon: "🌍" },
     { id: "ACCELERATORS", label: "Ускорители", icon: "⚡" },
+    { id: "BUNDLES", label: "Наборы", icon: "🎁" },
     { id: "PREMIUM", label: "Премиум", icon: "⭐" },
   ];
+
+  const bundleDeadline = new Date(
+    new Date(createdAt).getTime() + 7 * 24 * 60 * 60 * 1000
+  );
+  const isBundleAvailable = new Date() < bundleDeadline;
+
+  const BundleTimer = ({ deadline }: { deadline: Date }) => {
+    const [timeLeft, setTimeLeft] = useState("");
+
+    useEffect(() => {
+      const update = () => {
+        const diff = deadline.getTime() - new Date().getTime();
+        if (diff <= 0) {
+          setTimeLeft("Завершено");
+          return;
+        }
+        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((diff % (1000 * 60)) / 1000);
+        setTimeLeft(`${d}д ${h}ч ${m}м ${s}с`);
+      };
+      update();
+      const i = setInterval(update, 1000);
+      return () => clearInterval(i);
+    }, [deadline]);
+
+    return <span>{timeLeft}</span>;
+  };
 
   const accelerators = [
     { id: "time_warp_1m", title: "1 минута", price: 1, desc: "Сокращает время на 1 мин" },
@@ -189,6 +220,43 @@ const Shop = () => {
               </div>
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Контент категории: Наборы */}
+      {activeCategory === "BUNDLES" && (
+        <div className="animate-in fade-in zoom-in-95 duration-300">
+          {isBundleAvailable ? (
+            <div className="p-6 rounded-[32px] bg-gradient-to-br from-orange-500 to-red-600 shadow-xl relative overflow-hidden group">
+              <div className="relative z-10">
+                <h3 className="font-black text-xl uppercase tracking-tighter mb-1">
+                  Набор "Быстрый старт"
+                </h3>
+                <div className="text-xs font-bold bg-black/20 inline-block px-2 py-1 rounded mb-2">
+                  Осталось: <BundleTimer deadline={bundleDeadline} />
+                </div>
+                <p className="text-sm opacity-90 mb-4">
+                  1x Буст (3 дня), 1x Ускоритель (7 дней), 100+ других
+                  ускорителей!
+                </p>
+                <button
+                  onClick={() =>
+                    useGameStore.getState().buyBoost("bundle_quick_start")
+                  }
+                  className="bg-white text-orange-600 px-6 py-3 rounded-2xl font-black uppercase text-sm shadow-lg active:scale-90 transition-transform w-full"
+                >
+                  Купить за 300 ⭐
+                </button>
+              </div>
+              <span className="absolute -right-4 -bottom-4 text-8xl opacity-20 group-hover:scale-110 transition-transform">
+                🎁
+              </span>
+            </div>
+          ) : (
+            <div className="text-center text-slate-500 py-10">
+              Нет доступных наборов
+            </div>
+          )}
         </div>
       )}
 

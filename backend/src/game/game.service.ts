@@ -78,6 +78,25 @@ export class GameService {
     },
   };
 
+  private readonly BUNDLE_QUICK_START = {
+    name: "Набор для быстрого старта",
+    description: "Мощный старт для новичка!",
+    price: 300,
+    items: [
+      { id: "boost_3d", quantity: 1 },
+      { id: "time_warp_7d", quantity: 1 },
+      { id: "time_warp_3d", quantity: 1 },
+      { id: "time_warp_24h", quantity: 1 },
+      { id: "time_warp_15h", quantity: 1 },
+      { id: "time_warp_8h", quantity: 1 },
+      { id: "time_warp_4h", quantity: 2 },
+      { id: "time_warp_1h", quantity: 4 },
+      { id: "time_warp_15m", quantity: 10 },
+      { id: "time_warp_3m", quantity: 30 },
+      { id: "time_warp_1m", quantity: 100 },
+    ],
+  };
+
   constructor(private prisma: PrismaService) {}
 
   private getMultiplier(user: any): number {
@@ -430,6 +449,11 @@ export class GameService {
         description = "Удвоение добычи ресурсов и силы клика на 7 дней";
         price = 200;
         payload = `boost_7d_${userId}`;
+      } else if (itemId === "bundle_quick_start") {
+        title = this.BUNDLE_QUICK_START.name;
+        description = this.BUNDLE_QUICK_START.description;
+        price = this.BUNDLE_QUICK_START.price;
+        payload = `bundle_quick_start_${userId}`;
       } else if (itemId !== "boost_24h") {
         const item = this.ITEMS[itemId as keyof typeof this.ITEMS];
         if (!item) throw new Error("Товар не найден");
@@ -509,6 +533,12 @@ export class GameService {
             console.log(`Boost Payment success for user ${userId} (${hours}h)`);
             await this.activateBoost(Number(userId), hours);
           }
+        } else if (payload.startsWith("bundle_quick_start_")) {
+          const userId = Number(payload.split("_")[3]);
+          if (userId) {
+            console.log(`Bundle Payment success for user ${userId}`);
+            await this.processBundle(userId);
+          }
         } else if (payload.startsWith("item_")) {
           // payload format: item_ITEMID_USERID
           const parts = payload.split("_");
@@ -528,7 +558,18 @@ export class GameService {
     return { status: "ignored" };
   }
 
-  async addItemToInventory(telegramId: number, itemId: string) {
+  async processBundle(userId: number) {
+    // 1. Activate Boost 3d (72 hours)
+    await this.activateBoost(userId, 72);
+
+    // 2. Add items
+    for (const item of this.BUNDLE_QUICK_START.items) {
+      if (item.id.startsWith("boost")) continue; // Handled above
+      await this.addItemToInventory(userId, item.id, item.quantity);
+    }
+  }
+
+  async addItemToInventory(telegramId: number, itemId: string, quantity: number = 1) {
     const tid = BigInt(telegramId);
     const user = await this.prisma.user.findUnique({ where: { telegramId: tid } });
     if (!user) return;
@@ -546,14 +587,14 @@ export class GameService {
     if (existingItem) {
       await this.prisma.inventoryItem.update({
         where: { id: existingItem.id },
-        data: { quantity: { increment: 1 } },
+        data: { quantity: { increment: quantity } },
       });
     } else {
       await this.prisma.inventoryItem.create({
         data: {
           telegramId: tid,
           itemId: itemId,
-          quantity: 1,
+          quantity: quantity,
         },
       });
     }
@@ -590,6 +631,7 @@ export class GameService {
         : null,
       refiningOilAmount: user.refiningOilAmount || 0,
       refiningFuelAmount: user.refiningFuelAmount || 0,
+      createdAt: user.createdAt ? user.createdAt.toISOString() : new Date().toISOString(),
       inventory: (user.inventory || []).map((item: any) => ({
         ...item,
         telegramId: item.telegramId.toString(),
